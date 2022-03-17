@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>mpl_calibration_toolbox</name>
+  <version>0.0.0</version>
+  <description>The mpl_calibration_toolbox package</description>
+  <maintainer email="gaoling@shanghaitech.edu.cn">Ling Gao</maintainer>
+  <license>TODO</license>
+  <url type="website">https://star-datasets.github.io/vector/calibration/</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <depend>cv_bridge</depend>
+  <depend>roscpp</depend>
+  <depend>rospy</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+</package>
