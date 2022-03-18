@@ -5,6 +5,7 @@
 #include <opencv2/imgcodecs.hpp>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
+#include <utility.hpp>
 
 int main(int argc, char ** argv) {
   ros::init(argc, argv, "image_publisher");
@@ -12,7 +13,7 @@ int main(int argc, char ** argv) {
   ros::Publisher  pub_img = nh.advertise<sensor_msgs::Image>("/recorded_image", 1000);
 
   std::string dir_path;
-  ros::param::get("/directory_path", dir_path);
+  ros::param::get("/image_directory_path", dir_path);
   if (dir_path.back() != '/') dir_path += '/';
 
   // Read each image's absolute path from the input directory.
@@ -28,7 +29,7 @@ int main(int argc, char ** argv) {
     }
   }
   if (file_path_vec.empty()) {
-    std::cerr << "\033[1;31m>> Found no images under the directory: " << dir_path << " \033[0m" << std::endl << std::endl;
+    std::cerr << colorful_char::error("Found no images under the directory: " + dir_path) << std::endl << std::endl;
     ros::shutdown();
     return -1;
   } else {
@@ -40,7 +41,7 @@ int main(int argc, char ** argv) {
   for (size_t idx = 0; idx < file_path_vec.size(); ++idx) {
     cv::Mat img = cv::imread(file_path_vec[idx], cv::IMREAD_COLOR);
     if (img.empty()) {
-      ROS_ERROR_STREAM("\033[1;31m>> Could not read the image: " << file_name_vec[idx] << " \033[0m");
+      ROS_ERROR_STREAM(colorful_char::error("Could not read the image: " + file_name_vec[idx]));
       continue;
     }
     cv_bridge::CvImage img_bridge;

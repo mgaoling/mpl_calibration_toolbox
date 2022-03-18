@@ -13,14 +13,18 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(OpenCV REQUIRED)
 
-catkin_package()
+catkin_package(
+  INCLUDE_DIRS include
+)
 
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
 
 link_directories(
+  include
 	${OpenCV_LIBRARY_DIRS}
 )
 
