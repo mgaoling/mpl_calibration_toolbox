@@ -18,30 +18,30 @@ int main(int argc, char ** argv) {
 
   // Read each image's absolute path from the input directory.
   boost::filesystem::path               dir(dir_path);
-  boost::filesystem::directory_iterator it_file(dir);
-  boost::filesystem::directory_iterator end_it_file;
-  std::vector<std::string>              file_path_vec;
-  std::vector<std::string>              file_name_vec;
-  for (; it_file != end_it_file; ++it_file) {
-    if (boost::filesystem::is_regular_file(it_file->status()) && it_file->path().extension().string() == ".png") {
-      file_path_vec.emplace_back(it_file->path().string());
-      file_name_vec.emplace_back(it_file->path().stem().string());
+  boost::filesystem::directory_iterator it_img(dir);
+  boost::filesystem::directory_iterator end_it_img;
+  std::vector<std::string>              img_path_vec;
+  std::vector<std::string>              img_name_vec;
+  for (; it_img != end_it_img; ++it_img) {
+    if (boost::filesystem::is_regular_file(it_img->status()) && it_img->path().extension().string() == ".png") {
+      img_path_vec.emplace_back(it_img->path().string());
+      img_name_vec.emplace_back(it_img->path().stem().string());
     }
   }
-  if (file_path_vec.empty()) {
+  if (img_path_vec.empty()) {
     std::cerr << colorful_char::error("Found no images under the directory: " + dir_path) << std::endl << std::endl;
     ros::shutdown();
     return -1;
   } else {
-    std::sort(file_path_vec.begin(), file_path_vec.end());
-    std::sort(file_name_vec.begin(), file_name_vec.end());
+    std::sort(img_path_vec.begin(), img_path_vec.end());
+    std::sort(img_name_vec.begin(), img_name_vec.end());
   }
 
   // Publish each image via ROS communication.
-  for (size_t idx = 0; idx < file_path_vec.size(); ++idx) {
-    cv::Mat img = cv::imread(file_path_vec[idx], cv::IMREAD_COLOR);
+  for (size_t idx = 0; idx < img_path_vec.size(); ++idx) {
+    cv::Mat img = cv::imread(img_path_vec[idx], cv::IMREAD_COLOR);
     if (img.empty()) {
-      ROS_ERROR_STREAM(colorful_char::error("Could not read the image: " + file_name_vec[idx]));
+      ROS_ERROR_STREAM(colorful_char::error("Could not read the image: " + img_name_vec[idx]));
       continue;
     }
     cv_bridge::CvImage img_bridge;
