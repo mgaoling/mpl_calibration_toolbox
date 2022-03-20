@@ -1,0 +1,18 @@
+checkerboard_width: 9
+checkerboard_height: 6
+checkerboard_square_size: 0.037 # [m]
+image_directory_path: [
+    "/home/mgao/Downloads/small_scale_joint_camera_extrinsic_data/right_regular_camera", # <-- transformation with respect to this camera
+    "/home/mgao/Downloads/small_scale_joint_camera_extrinsic_data/left_regular_camera",
+    "/home/mgao/Downloads/small_scale_joint_camera_extrinsic_data/right_event_camera",
+    "/home/mgao/Downloads/small_scale_joint_camera_extrinsic_data/left_event_camera",
+    "/home/mgao/Downloads/small_scale_joint_camera_extrinsic_data/rgbd_color_camera",
+  ]
+intrisic_yaml_path: [
+    "/home/mgao/Downloads/right_regular_camera_intrinsic_results.yaml", # <-- follow the same order as above
+    "/home/mgao/Downloads/left_regular_camera_intrinsic_results.yaml",
+    "/home/mgao/Downloads/right_event_camera_intrinsic_results.yaml",
+    "/home/mgao/Downloads/left_event_camera_intrinsic_results.yaml",
+    "/home/mgao/Downloads/rgbd_color_camera_factory_intrinsic_results.yaml",
+  ]
+show_visualization: false

@@ -1,0 +1,4 @@
+<launch>
+  <rosparam command="load" file="$(find mpl_calibration_toolbox)/config/joint_extrinsic_calibration.yaml" />
+  <node pkg="mpl_calibration_toolbox" type="joint_extrinsic_calibrator" name="joint_extrinsic_calibrator" output="screen"/>
+</launch>
