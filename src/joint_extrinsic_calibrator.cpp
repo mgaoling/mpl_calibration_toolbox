@@ -4,9 +4,9 @@
 #include <ceres/rotation.h>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
+#include <ros/package.h>
 #include <ros/ros.h>
 #include <utility.hpp>
-#include <yaml-cpp/yaml.h>
 
 // PNP-based Cost Functor (residual) for the first camera (reference Camera)
 class CamRefPNP {
@@ -293,8 +293,19 @@ int main(int argc, char ** argv) {
       * Eigen::Quaterniond(q_cr_b_vec[img_idx * 4], q_cr_b_vec[img_idx * 4 + 1], q_cr_b_vec[img_idx * 4 + 2], q_cr_b_vec[img_idx * 4 + 3])
           .normalized());
 
-  // TODO: Output extrinsic results.
-  for (size_t cam_idx = 0; cam_idx < cam_num - 1; ++cam_idx) std::cout << T_cx_cr_vec[cam_idx].matrix() << std::endl;
+  // Output extrinsic results both on terminal and in yaml file.
+  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_camera_extrinsic_results.yaml");
+  YAML::Node    output_yaml;
+  for (int idx = 0; idx < cam_num; ++idx) {
+    output_yaml["cam" + std::to_string(idx)]["camera_name"] = intrinsic_vec[idx].name();
+    if (idx == 0) continue;
+    std::cout << colorful_char::info("Transformation from " + intrinsic_vec[idx].name() + " to " + intrinsic_vec[0].name() + ": ")
+              << std::endl;
+    std::cout << T_cx_cr_vec[idx - 1].inverse().matrix() << std::endl;
+    output_yaml["cam" + std::to_string(idx)]["T_cam0_cam" + std::to_string(idx)] = T_cx_cr_vec[idx - 1].inverse();
+  }
+  fout << output_yaml;
+  fout.close();
 
   // Run validation-used visualization on reprojection errors.
   for (size_t cam_idx = 0; cam_idx < cam_num - 1; ++cam_idx) {
@@ -304,11 +315,11 @@ int main(int argc, char ** argv) {
         cv::Point2d proj_corner =
           PNP(obj_pts_vec[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(), T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
         residual += CalcReprojectionError(corners_vec[cam_idx + 1][img_idx][pt_idx], proj_corner);
-        cv::circle(reader_vec[cam_idx + 1].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);  // Note that camera starts from 1.
+        cv::circle(reader_vec[cam_idx + 1].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);
       }
       residual /= board_width * board_height;
       cv::putText(reader_vec[cam_idx + 1].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
-                  cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);  // Note that camera starts from 1.
+                  cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
       if (residual >= 2)
         std::cout << colorful_char::warning("The overall reprojection is higher than 2pix in image: "
                                             + reader_vec[cam_idx + 1].image_path(img_idx))
