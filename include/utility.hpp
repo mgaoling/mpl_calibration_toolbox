@@ -10,11 +10,11 @@ std::string info(std::string input_str) {
 }
 
 std::string warning(std::string input_str) {
-  return "\033[1;35m>> " + input_str + " \033[0m";
+  return "\033[1;35m>> WARNING: " + input_str + " \033[0m";
 }
 
 std::string error(std::string input_str) {
-  return "\033[1;31m>> " + input_str + " \033[0m";
+  return "\033[1;31m>> ERROR: " + input_str + " \033[0m";
 }
 
 }  // namespace colorful_char

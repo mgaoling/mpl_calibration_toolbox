@@ -1,10 +1,15 @@
 #ifndef CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
 #define CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
 
+#include <filesystem>
+#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
+#include <ros/package.h>
 #include <utility.hpp>
 #include <yaml-cpp/yaml.h>
+
+namespace fs = std::filesystem;
 
 class CameraIntrinsics {
 private:
@@ -34,7 +39,11 @@ public:
 };
 
 // Construct the Camera Intrinsic instance by reading from the yaml file and calculating the projection matrix plus undistortion map.
-CameraIntrinsics::CameraIntrinsics(std::string yaml_path) {
+CameraIntrinsics::CameraIntrinsics(std::string yaml_path) : valid_(true) {
+  if (!fs::exists(yaml_path)) {
+    if (yaml_path.front() != '/') yaml_path = '/' + yaml_path;
+    yaml_path = ros::package::getPath("mpl_calibration_toolbox") + yaml_path;
+  }
   YAML::Node config = YAML::LoadFile(yaml_path);
   if (config.IsNull()) {
     valid_ = false;
@@ -54,8 +63,6 @@ CameraIntrinsics::CameraIntrinsics(std::string yaml_path) {
   rect_mtx_   = cv::Mat(3, 3, CV_64F, rect_vec.data()).clone();
   proj_mtx_   = cv::getOptimalNewCameraMatrix(cam_mtx_, dist_coeff_, size_, 0);
   cv::initUndistortRectifyMap(cam_mtx_, dist_coeff_, rect_mtx_, proj_mtx_, size_, CV_32FC1, undist_maps_x_, undist_maps_y_);
-
-  valid_ = true;
 }
 
 #endif  // CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_

@@ -11,6 +11,7 @@
   <depend>ceres</depend>
   <depend>cv_bridge</depend>
   <depend>roscpp</depend>
+  <depend>roslib</depend>
   <depend>rospy</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>

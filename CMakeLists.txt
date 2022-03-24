@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(mpl_calibration_toolbox)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
 
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   roscpp
+  roslib
   rospy
   sensor_msgs
   std_msgs

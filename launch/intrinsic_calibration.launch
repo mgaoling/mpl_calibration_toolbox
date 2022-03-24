@@ -1,5 +1,5 @@
 <launch>
-  <param name="image_directory_path" value="$(arg image_directory_path)"/>
+  <rosparam command="load" file="$(find mpl_calibration_toolbox)/config/intrinsic_calibration.yaml" />
   <node pkg="mpl_calibration_toolbox" type="image_publisher" name="image_publisher" output="screen"/>
   <node pkg="camera_calibration" type="cameracalibrator.py" name="cameracalibrator" output="screen" args="--size 9x6 --square 0.037 image:=/recorded_image --no-service-check"/>
 </launch>
