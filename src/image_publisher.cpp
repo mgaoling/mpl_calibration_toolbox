@@ -14,6 +14,7 @@ int main(int argc, char ** argv) {
   int speed;
   ros::param::get("playback_speed", speed);
 
+  // Read camera's images from the input directory path.
   std::string dir_path;
   ros::param::get("/image_directory_path", dir_path);
   ImageReader reader = ImageReader(dir_path);

@@ -3,6 +3,9 @@
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include <filesystem>
+#include <iostream>
+#include <ros/package.h>
 #include <string>
 #include <yaml-cpp/yaml.h>
 
@@ -46,5 +49,33 @@ template<> struct convert<Eigen::Affine3d> {
 };
 
 }  // namespace YAML
+
+namespace fs = std::filesystem;
+
+// Check whether the directory/file path is absolute path or relative path, as well as its validness.
+bool directory_path_check(std::string & path) {
+  if (path.back() != '/') path += '/';
+  if (!fs::exists(path)) {
+    if (path.front() != '/') path = '/' + path;
+    path = ros::package::getPath("mpl_calibration_toolbox") + path;
+  }
+  if (!fs::exists(path)) {
+    std::cerr << colorful_char::error("Invalid directory path: " + path) << std::endl;
+    return false;
+  }
+  return true;
+}
+
+bool file_path_check(std::string & path) {
+  if (!fs::exists(path)) {
+    if (path.front() != '/') path = '/' + path;
+    path = ros::package::getPath("mpl_calibration_toolbox") + path;
+  }
+  if (!fs::exists(path)) {
+    std::cerr << colorful_char::error("Invalid file path: " + path) << std::endl;
+    return false;
+  }
+  return true;
+}
 
 #endif  // CALIB_TOOLBOX_UTILITY_HPP_

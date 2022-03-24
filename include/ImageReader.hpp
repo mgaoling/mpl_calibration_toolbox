@@ -5,7 +5,6 @@
 #include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
-#include <ros/package.h>
 #include <utility.hpp>
 
 namespace fs = std::filesystem;
@@ -31,20 +30,9 @@ public:
   std::vector<std::string> image_path_vector() { return img_path_vec_; }
 };
 
+// Validate and read each image in the input directory.
 ImageReader::ImageReader(std::string dir_path) : valid_(true) {
-  // Check whether the directory path is absolute path or relative path, as well as its validness.
-  if (dir_path.back() != '/') dir_path += '/';
-  if (!fs::exists(dir_path)) {
-    if (dir_path.front() != '/') dir_path = '/' + dir_path;
-    dir_path = ros::package::getPath("mpl_calibration_toolbox") + dir_path;
-  }
-  if (!fs::exists(dir_path)) {
-    valid_ = false;
-    std::cerr << colorful_char::error("Invalid directory: " + dir_path) << std::endl;
-    return;
-  }
-
-  // Find directory's name.
+  if (valid_ = directory_path_check(dir_path)) return;
   dir_path.pop_back();
   dir_name_ = dir_path.substr(dir_path.find_last_of("/\\") + 1);
   dir_path += '/';

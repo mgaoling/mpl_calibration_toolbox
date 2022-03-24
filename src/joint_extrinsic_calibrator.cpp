@@ -294,7 +294,7 @@ int main(int argc, char ** argv) {
           .normalized());
 
   // Output extrinsic results both on terminal and in yaml file.
-  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_camera_extrinsic_results.yaml");
+  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_extrinsic_results.yaml");
   YAML::Node    output_yaml;
   for (int idx = 0; idx < cam_num; ++idx) {
     output_yaml["cam" + std::to_string(idx)]["camera_name"] = intrinsic_vec[idx].name();
