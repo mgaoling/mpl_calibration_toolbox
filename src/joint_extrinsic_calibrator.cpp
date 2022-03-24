@@ -1,10 +1,11 @@
 #include <CameraIntrinsics.hpp>
-#include <boost/filesystem.hpp>
+#include <ImageReader.hpp>
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <ros/ros.h>
+#include <utility.hpp>
 #include <yaml-cpp/yaml.h>
 
 // PNP-based Cost Functor (residual) for the first camera (reference Camera)
@@ -16,7 +17,7 @@ private:
 
 public:
   CamRefPNP(const cv::Point3d & obj_pts, const cv::Point2d & img_pts, const cv::Mat & projection_matrix) :
-    obj_pts_(obj_pts), img_pts_(img_pts), proj_mtx_(projection_matrix) {}
+    obj_pts_(obj_pts), img_pts_(img_pts), proj_mtx_(projection_matrix) { }
 
   template<typename T> bool operator()(const T * const q_cr_b, const T * const t_cr_b, T * residual) const {
     // Coordinate transformation from the Board frame (world frame) to the first Camera frame (Reference frame)
@@ -57,7 +58,7 @@ private:
 
 public:
   CamXPNP(const cv::Point3d obj_pts, const cv::Point2d img_pts, const cv::Mat projection_matrix) :
-    obj_pts_(obj_pts), img_pts_(img_pts), proj_mtx_(projection_matrix) {}
+    obj_pts_(obj_pts), img_pts_(img_pts), proj_mtx_(projection_matrix) { }
 
   template<typename T>
   bool operator()(const T * const q_cr_b, const T * const t_cr_b, const T * const q_cx_cr, const T * const t_cx_cr, T * residual) const {
@@ -118,9 +119,11 @@ double CalcReprojectionError(cv::Point2d & detected_corner, cv::Point2d & reproj
 int main(int argc, char ** argv) {
   ros::init(argc, argv, "joint_extrinsic_calibrator");
   ros::NodeHandle nh;
-  bool            vis_on;
+
+  bool vis_on;
   ros::param::get("show_visualization", vis_on);
 
+  // Read checkerboard's basic info.
   int    board_width, board_height;
   double board_square_size;
   ros::param::get("checkerboard_width", board_width);
@@ -128,12 +131,9 @@ int main(int argc, char ** argv) {
   ros::param::get("checkerboard_square_size", board_square_size);
   cv::Size board_size(board_width, board_height);
 
-  std::vector<std::string> dir_path_vec;
-  ros::param::get("/image_directory_path", dir_path_vec);
-
   // Read each camera's intrinsic from the input path.
-  std::vector<std::string>      intrinsic_path_vec;
   std::vector<CameraIntrinsics> intrinsic_vec;
+  std::vector<std::string>      intrinsic_path_vec;
   ros::param::get("/intrisic_yaml_path", intrinsic_path_vec);
   for (std::string intrinsic_path : intrinsic_path_vec) {
     intrinsic_vec.emplace_back(intrinsic_path);
@@ -144,89 +144,61 @@ int main(int argc, char ** argv) {
   }
   int cam_num = intrinsic_vec.size();
 
-  // Read each image's absolute path from the input directory.
-  std::vector<std::vector<std::string>> cam_img_path_vec;
-  std::vector<std::vector<std::string>> cam_img_name_vec;
+  // Read each camera's images from the input directory path.
+  std::vector<ImageReader> reader_vec;
+  std::vector<std::string> dir_path_vec;
+  ros::param::get("/image_directory_path", dir_path_vec);
   for (size_t idx = 0; idx < dir_path_vec.size(); ++idx) {
-    std::string dir_path = dir_path_vec[idx];
-    if (dir_path.back() == '/') dir_path.pop_back();
-    boost::filesystem::path dir(dir_path);
-    std::string             cam_name = dir.stem().string();
-    if (idx >= cam_num) {
+    reader_vec.emplace_back(dir_path_vec[idx]);
+    if (!reader_vec.back().status()) {
+      ros::shutdown();
+      return 0;
+    } else if (idx >= cam_num) {
       std::cerr << colorful_char::error("The number of the intrisic yaml does not match with the number of the image directory.")
-                << std::endl
                 << std::endl;
       ros::shutdown();
       return -1;
-    } else if (cam_name != intrinsic_vec[idx].name()) {
+    } else if (reader_vec.back().directory_name() != intrinsic_vec[idx].name()) {
       std::cerr << colorful_char::error("The order of the intrisic yaml does not match with the order of the image directory. ")
-                << std::endl
                 << std::endl;
       ros::shutdown();
       return -1;
-    }
-
-    dir += '/';
-    std::vector<std::string>              img_path_vec;
-    std::vector<std::string>              img_name_vec;
-    boost::filesystem::directory_iterator it_img(dir);
-    boost::filesystem::directory_iterator end_it_img;
-    for (; it_img != end_it_img; ++it_img) {
-      if (boost::filesystem::is_regular_file(it_img->status()) && it_img->path().extension().string() == ".png") {
-        img_path_vec.emplace_back(it_img->path().string());
-        img_name_vec.emplace_back(it_img->path().stem().string());
-      }
-    }
-    if (img_path_vec.empty()) {
-      std::cerr << colorful_char::error("Found no images under the directory: " + dir_path) << std::endl << std::endl;
-      ros::shutdown();
-      return -1;
-    } else {
-      std::sort(img_path_vec.begin(), img_path_vec.end());
-      std::sort(img_name_vec.begin(), img_name_vec.end());
-    }
-    cam_img_path_vec.emplace_back(img_path_vec);
-    cam_img_name_vec.emplace_back(img_name_vec);
-    if (img_path_vec.front().size() != img_path_vec.back().size()) {
-      std::cerr << colorful_char::error("The number of images under each directory is not consistent with each other.") << std::endl
-                << std::endl;
+    } else if (reader_vec.front().size() != reader_vec.back().size()) {
+      std::cerr << colorful_char::error("The number of images under each directory is not consistent with each other.") << std::endl;
       ros::shutdown();
       return -1;
     }
   }
-  int img_num = cam_img_path_vec.front().size();
+  int img_num = reader_vec.front().size();
 
   // Detect checkerboard pattern on each undistorted image.
   bool                                               no_checkerboard_found = false;
-  std::vector<std::vector<cv::Mat>>                  imgs_vec;
-  std::vector<std::vector<std::vector<cv::Point2d>>> cam_img_corners_vec;
+  std::vector<std::vector<std::vector<cv::Point2d>>> corners_vec;
   for (size_t cam_idx = 0; cam_idx < cam_num; ++cam_idx) {
-    imgs_vec.emplace_back(std::vector<cv::Mat>());
-    cam_img_corners_vec.emplace_back(std::vector<std::vector<cv::Point2d>>());
+    corners_vec.emplace_back(std::vector<std::vector<cv::Point2d>>());
     for (size_t img_idx = 0; img_idx < img_num; ++img_idx) {
-      cv::Mat img = cv::imread(cam_img_path_vec[cam_idx][img_idx], cv::IMREAD_COLOR);
+      cv::Mat img = reader_vec[cam_idx].image(img_idx);
       cv::remap(img, img, intrinsic_vec[cam_idx].undistortion_map_x(), intrinsic_vec[cam_idx].undistortion_map_y(), cv::INTER_LINEAR);
       cv::Mat gray_img;
-      if (img.channels() == 1)
-        gray_img = img.clone();
+      if (img.channels() == 1) gray_img = img.clone();
       else
         cv::cvtColor(img, gray_img, cv::COLOR_BGR2GRAY);
 
       cv::Mat corners;
-      cam_img_corners_vec[cam_idx].emplace_back(std::vector<cv::Point2d>());
+      corners_vec[cam_idx].emplace_back(std::vector<cv::Point2d>());
       if (cv::findChessboardCorners(gray_img, board_size, corners)) {
         cv::cornerSubPix(gray_img, corners, cv::Size(11, 11), cv::Size(-1, -1),
                          cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 20, 0.01));
         cv::drawChessboardCorners(img, board_size, corners, true);
         for (int pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
-          cam_img_corners_vec[cam_idx][img_idx].emplace_back(corners.at<cv::Point2f>(pt_idx, 0).x, corners.at<cv::Point2f>(pt_idx, 0).y);
+          corners_vec[cam_idx][img_idx].emplace_back(corners.at<cv::Point2f>(pt_idx, 0).x, corners.at<cv::Point2f>(pt_idx, 0).y);
       } else {
         no_checkerboard_found = true;
-        std::cout << colorful_char::warning("No checkerboard pattern found in image: " + cam_img_path_vec[cam_idx][img_idx]) << std::endl;
+        std::cout << colorful_char::warning("No checkerboard pattern found in image: " + reader_vec[cam_idx].image_path(img_idx))
+                  << std::endl;
       }
-      cv::putText(img, intrinsic_vec[cam_idx].name() + " " + cam_img_name_vec[cam_idx][img_idx], cv::Point(cv::Size(20, 35)),
+      cv::putText(img, intrinsic_vec[cam_idx].name() + " " + reader_vec[cam_idx].image_name(img_idx), cv::Point(cv::Size(20, 35)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
-      imgs_vec[cam_idx].emplace_back(img.clone());
       if (vis_on) {
         cv::imshow("Checkerboard Pattern", img);
         cv::waitKey(0);
@@ -235,8 +207,7 @@ int main(int argc, char ** argv) {
   }
   if (vis_on) cv::destroyAllWindows();
   if (no_checkerboard_found) {
-    std::cerr << colorful_char::error("Joint Extrinsic Calibration terminated. Please remove the unwanted images.") << std::endl
-              << std::endl;
+    std::cerr << colorful_char::error("Joint Extrinsic Calibration terminated. Please remove the unwanted images.") << std::endl;
     ros::shutdown();
     return -1;
   }
@@ -285,7 +256,7 @@ int main(int argc, char ** argv) {
     double * param_t_cr_b = t_cr_b_vec.data() + img_idx * 3;
     for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
       problem.AddResidualBlock(
-        CamRefPNP::create(obj_pts_vec[pt_idx], cam_img_corners_vec[0][img_idx][pt_idx], intrinsic_vec[0].projection_matrix()), nullptr,
+        CamRefPNP::create(obj_pts_vec[pt_idx], corners_vec[0][img_idx][pt_idx], intrinsic_vec[0].projection_matrix()), nullptr,
         param_q_cr_b, param_t_cr_b);  // At here, 0 represents the first camera (as reference).
     }
   }
@@ -296,7 +267,7 @@ int main(int argc, char ** argv) {
       double * param_q_cr_b = q_cr_b_vec.data() + img_idx * 4;
       double * param_t_cr_b = t_cr_b_vec.data() + img_idx * 3;
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
-        problem.AddResidualBlock(CamXPNP::create(obj_pts_vec[pt_idx], cam_img_corners_vec[cam_idx + 1][img_idx][pt_idx],
+        problem.AddResidualBlock(CamXPNP::create(obj_pts_vec[pt_idx], corners_vec[cam_idx + 1][img_idx][pt_idx],
                                                  intrinsic_vec[cam_idx + 1].projection_matrix()),  // Note that camera starts from 1.
                                  nullptr, param_q_cr_b, param_t_cr_b, param_q_cx_cr, param_t_cx_cr);
     }
@@ -323,8 +294,7 @@ int main(int argc, char ** argv) {
           .normalized());
 
   // TODO: Output extrinsic results.
-  for (size_t cam_idx = 0; cam_idx < cam_num - 1; ++cam_idx)
-    std::cout << T_cx_cr_vec[cam_idx].matrix() << std::endl;
+  for (size_t cam_idx = 0; cam_idx < cam_num - 1; ++cam_idx) std::cout << T_cx_cr_vec[cam_idx].matrix() << std::endl;
 
   // Run validation-used visualization on reprojection errors.
   for (size_t cam_idx = 0; cam_idx < cam_num - 1; ++cam_idx) {
@@ -333,17 +303,18 @@ int main(int argc, char ** argv) {
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
         cv::Point2d proj_corner =
           PNP(obj_pts_vec[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(), T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
-        residual += CalcReprojectionError(cam_img_corners_vec[cam_idx + 1][img_idx][pt_idx], proj_corner);
-        cv::circle(imgs_vec[cam_idx + 1][img_idx], proj_corner, 2, cv::Scalar(255, 0, 0), 3);  // Note that camera starts from 1.
+        residual += CalcReprojectionError(corners_vec[cam_idx + 1][img_idx][pt_idx], proj_corner);
+        cv::circle(reader_vec[cam_idx + 1].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);  // Note that camera starts from 1.
       }
       residual /= board_width * board_height;
-      cv::putText(imgs_vec[cam_idx + 1][img_idx], "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
+      cv::putText(reader_vec[cam_idx + 1].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);  // Note that camera starts from 1.
       if (residual >= 2)
-        std::cout << colorful_char::warning("The overall reprojection is higher than 2pix in image: " + cam_img_path_vec[cam_idx][img_idx])
+        std::cout << colorful_char::warning("The overall reprojection is higher than 2pix in image: "
+                                            + reader_vec[cam_idx + 1].image_path(img_idx))
                   << std::endl;
       if (vis_on) {
-        cv::imshow("Reprojection Results", imgs_vec[cam_idx + 1][img_idx]);
+        cv::imshow("Reprojection Results", reader_vec[cam_idx + 1].image(img_idx));
         cv::waitKey(0);
       }
     }
