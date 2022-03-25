@@ -2,11 +2,7 @@
 #include <ImageReader.hpp>
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
-#include <opencv2/core.hpp>
-#include <opencv2/opencv.hpp>
-#include <ros/package.h>
 #include <ros/ros.h>
-#include <utility.hpp>
 
 // PNP-based Cost Functor (residual) for the first camera (reference Camera)
 class CamRefPNP {

@@ -1,11 +1,9 @@
 #ifndef CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
 #define CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
 
-#include <iostream>
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
 #include <utility.hpp>
-#include <yaml-cpp/yaml.h>
 
 class CameraIntrinsics {
 private:
