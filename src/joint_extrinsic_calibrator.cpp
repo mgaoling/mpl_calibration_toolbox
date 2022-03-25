@@ -1,4 +1,5 @@
 #include <CameraIntrinsics.hpp>
+#include <Checkerboard.hpp>
 #include <ImageReader.hpp>
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
@@ -125,7 +126,7 @@ int main(int argc, char ** argv) {
   ros::param::get("checkerboard_width", board_width);
   ros::param::get("checkerboard_height", board_height);
   ros::param::get("checkerboard_square_size", board_square_size);
-  cv::Size board_size(board_width, board_height);
+  Checkerboard board = Checkerboard(board_width, board_height, board_square_size);
 
   // Read each camera's intrinsic from the input path.
   std::vector<CameraIntrinsics> intrinsic_vec;
@@ -182,10 +183,10 @@ int main(int argc, char ** argv) {
 
       cv::Mat corners;
       corners_vec[cam_idx].emplace_back(std::vector<cv::Point2d>());
-      if (cv::findChessboardCorners(gray_img, board_size, corners)) {
+      if (cv::findChessboardCorners(gray_img, board.size(), corners)) {
         cv::cornerSubPix(gray_img, corners, cv::Size(11, 11), cv::Size(-1, -1),
                          cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 20, 0.01));
-        cv::drawChessboardCorners(img, board_size, corners, true);
+        cv::drawChessboardCorners(img, board.size(), corners, true);
         for (int pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
           corners_vec[cam_idx][img_idx].emplace_back(corners.at<cv::Point2f>(pt_idx, 0).x, corners.at<cv::Point2f>(pt_idx, 0).y);
       } else {
@@ -206,12 +207,6 @@ int main(int argc, char ** argv) {
     std::cerr << colorful_char::error("Joint Extrinsic Calibration terminated. Please remove the unwanted images.") << std::endl;
     ros::shutdown();
     return -1;
-  }
-
-  // Create a 3D point vector to represent the checkerboard pattern in world frame (with z = 0) under the same order as 2D corners.
-  std::vector<cv::Point3d> obj_pts_vec;
-  for (int idx_y = 0; idx_y < board_height; ++idx_y) {
-    for (int idx_x = 0; idx_x < board_width; ++idx_x) obj_pts_vec.emplace_back(board_square_size * idx_x, board_square_size * idx_y, 0);
   }
 
   // Optimization Objective: minimize the 2D-3D reprojection errors (PNP) for each camera
@@ -252,7 +247,7 @@ int main(int argc, char ** argv) {
     double * param_t_cr_b = t_cr_b_vec.data() + img_idx * 3;
     for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
       problem.AddResidualBlock(
-        CamRefPNP::create(obj_pts_vec[pt_idx], corners_vec[0][img_idx][pt_idx], intrinsic_vec[0].projection_matrix()), nullptr,
+        CamRefPNP::create(board.object_points()[pt_idx], corners_vec[0][img_idx][pt_idx], intrinsic_vec[0].projection_matrix()), nullptr,
         param_q_cr_b, param_t_cr_b);  // At here, 0 represents the first camera (as reference).
     }
   }
@@ -263,7 +258,7 @@ int main(int argc, char ** argv) {
       double * param_q_cr_b = q_cr_b_vec.data() + img_idx * 4;
       double * param_t_cr_b = t_cr_b_vec.data() + img_idx * 3;
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
-        problem.AddResidualBlock(CamXPNP::create(obj_pts_vec[pt_idx], corners_vec[cam_idx + 1][img_idx][pt_idx],
+        problem.AddResidualBlock(CamXPNP::create(board.object_points()[pt_idx], corners_vec[cam_idx + 1][img_idx][pt_idx],
                                                  intrinsic_vec[cam_idx + 1].projection_matrix()),  // Note that camera starts from 1.
                                  nullptr, param_q_cr_b, param_t_cr_b, param_q_cx_cr, param_t_cx_cr);
     }
@@ -309,7 +304,7 @@ int main(int argc, char ** argv) {
     for (size_t img_idx = 0; img_idx < img_num; ++img_idx) {
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
         cv::Point2d proj_corner =
-          PNP(obj_pts_vec[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(), T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
+          PNP(board.object_points()[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(), T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
         residual += CalcReprojectionError(corners_vec[cam_idx + 1][img_idx][pt_idx], proj_corner);
         cv::circle(reader_vec[cam_idx + 1].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);
       }
