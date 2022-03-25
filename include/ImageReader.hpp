@@ -32,7 +32,8 @@ public:
 
 // Validate and read each image in the input directory.
 ImageReader::ImageReader(std::string dir_path) : valid_(true) {
-  if (valid_ = directory_path_check(dir_path)) return;
+  valid_ = directory_path_check(dir_path);
+  if (!valid_) return;
   dir_path.pop_back();
   dir_name_ = dir_path.substr(dir_path.find_last_of("/\\") + 1);
   dir_path += '/';

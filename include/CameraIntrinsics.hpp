@@ -36,7 +36,8 @@ public:
 
 // Construct the Camera Intrinsic instance by reading from the yaml file and calculating the projection matrix plus undistortion map.
 CameraIntrinsics::CameraIntrinsics(std::string yaml_path) : valid_(true) {
-  if (valid_ = directory_path_check(yaml_path)) return;
+  valid_ = file_path_check(yaml_path);
+  if (!valid_) return;
   YAML::Node config = YAML::LoadFile(yaml_path);
   if (config.IsNull()) {
     valid_ = false;
