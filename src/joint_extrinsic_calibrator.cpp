@@ -312,7 +312,7 @@ int main(int argc, char ** argv) {
       cv::putText(reader_vec[cam_idx + 1].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
       if (residual >= 2)
-        std::cout << colorful_char::warning("The overall reprojection is higher than 2pix in image: "
+        std::cout << colorful_char::warning("The overall reprojection error is higher than 2pix in image: "
                                             + reader_vec[cam_idx + 1].image_path(img_idx))
                   << std::endl;
       if (vis_on) {
