@@ -1,0 +1,4 @@
+<launch>
+  <rosparam command="load" file="$(find mpl_calibration_toolbox)/config/camera_mocap_calibration.yaml" />
+  <node pkg="mpl_calibration_toolbox" type="handeye_calibrator" name="handeye_calibrator" output="screen"/>
+</launch>

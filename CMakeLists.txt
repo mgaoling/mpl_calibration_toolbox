@@ -5,6 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17 -O3")
 
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
+  rosbag
   roscpp
   roslib
   rospy
@@ -13,7 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Ceres REQUIRED)
-find_package(OpenCV REQUIRED)
+find_package(OpenCV 4.2 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 catkin_package(
@@ -34,6 +35,8 @@ link_directories(
 
 add_executable(image_publisher src/image_publisher.cpp)
 add_executable(joint_extrinsic_calibrator src/joint_extrinsic_calibrator.cpp)
+add_executable(handeye_calibrator src/handeye_calibrator.cpp)
 
 target_link_libraries(image_publisher ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 target_link_libraries(joint_extrinsic_calibrator yaml-cpp ${catkin_LIBRARIES} ${CERES_LIBRARIES} ${OpenCV_LIBRARIES})
+target_link_libraries(handeye_calibrator yaml-cpp ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
