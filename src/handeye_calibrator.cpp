@@ -182,7 +182,7 @@ int main(int argc, char ** argv) {
   output_yaml["camera_name"] = intrinsic.name();
   std::cout << colorful_char::info("Transformation from " + intrinsic.name() + " to body: ") << std::endl;
   std::cout << T.matrix() << std::endl;
-  output_yaml["T_cody_cam"] = T;
+  output_yaml["T_body_cam"] = T;
   std::cout << colorful_char::info("Transformation from body to " + intrinsic.name() + ": ") << std::endl;
   std::cout << T.inverse().matrix() << std::endl;
   output_yaml["T_cam_body"] = T.inverse();

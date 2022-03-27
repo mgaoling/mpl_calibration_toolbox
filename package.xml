@@ -1,15 +1,18 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>mpl_calibration_toolbox</name>
-  <version>0.0.0</version>
-  <description>The mpl_calibration_toolbox package</description>
-  <maintainer email="gaoling@shanghaitech.edu.cn">Ling Gao</maintainer>
-  <license>TODO</license>
+  <version>1.0.0</version>
+  <description>The MPL Calibration Toolbox</description>
+  <maintainer email="mgaoling@gmail.com">Ling Gao</maintainer>
+  <license>BSD-3-Clause-Clear</license>
   <url type="website">https://star-datasets.github.io/vector/calibration/</url>
 
   <buildtool_depend>catkin</buildtool_depend>
   <depend>ceres</depend>
   <depend>cv_bridge</depend>
+  <depend>geometry_msgs</depend>
+  <depend>opencv</depend>
+  <depend>rosbag</depend>
   <depend>roscpp</depend>
   <depend>roslib</depend>
   <depend>rospy</depend>
