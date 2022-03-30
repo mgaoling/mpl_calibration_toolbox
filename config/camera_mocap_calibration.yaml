@@ -5,7 +5,7 @@ camera_frequency: 30
 mocap_frequency: 120
 camera_topic: "/stereo/right/image_mono"
 mocap_topic: "/gt/pose"
-intrisic_yaml_path: "/data/right_regular_camera_intrinsic_results.yaml"
+intrinsic_yaml_path: "/data/right_regular_camera_intrinsic_results.yaml"
 rosbag_path: "/data/camera_mocap_extrinsic_data1.bag"
 skipped_interval: 5 # [Minimum = 1] use 1 and skip N-1 (1 in N)
 pnp_residual_thershold: 1.0

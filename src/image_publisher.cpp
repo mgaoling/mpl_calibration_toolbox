@@ -21,11 +21,11 @@ int main(int argc, char ** argv) {
   }
 
   // Publish each image via ROS communication.
-  for (cv::Mat & img : reader.image_vector()) {
+  for (size_t idx = 0; idx < reader.size(); ++idx) {
     cv_bridge::CvImage img_bridge;
     sensor_msgs::Image img_msg;
     std_msgs::Header   header;
-    img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, img);
+    img_bridge = cv_bridge::CvImage(header, sensor_msgs::image_encodings::RGB8, reader.image(idx));
     img_bridge.toImageMsg(img_msg);
     pub_img.publish(img_msg);
     cv::waitKey(speed);

@@ -24,9 +24,9 @@ int main(int argc, char ** argv) {
   ros::param::get("checkerboard_square_size", board_square_size);
   Checkerboard board = Checkerboard(board_width, board_height, board_square_size);
 
-  // Read camera's intrinsic from the input path.
+  // Read camera's intrinsic result from the input path.
   std::string intrinsic_path;
-  ros::param::get("/intrisic_yaml_path", intrinsic_path);
+  ros::param::get("/intrinsic_yaml_path", intrinsic_path);
   if (!fs::exists(intrinsic_path)) {
     if (intrinsic_path.front() != '/') intrinsic_path = '/' + intrinsic_path;
     intrinsic_path = ros::package::getPath("mpl_calibration_toolbox") + intrinsic_path;
@@ -91,7 +91,7 @@ int main(int argc, char ** argv) {
       cv::Mat mocap_rotation    = gt_pose_queue.front().first;
       cv::Mat mocap_translation = gt_pose_queue.front().second;
       cv::Mat cam_r_vec, cam_t_vec;
-      for (int idx = 0; idx < skipped_interval; ++idx) {
+      for (size_t idx = 0; idx < skipped_interval; ++idx) {
         img_queue.pop();
         gt_pose_queue.pop();
       }
@@ -126,7 +126,7 @@ int main(int argc, char ** argv) {
       cv::projectPoints(board.object_points(), cam_r_vec, cam_t_vec, intrinsic.camera_matrix(), intrinsic.distortion_coefficients(),
                         proj_pts);
       double residual = 0;
-      for (int idx = 0; idx < board.object_points().size(); ++idx) {
+      for (size_t idx = 0; idx < board.object_points().size(); ++idx) {
         double dx = corners.at<cv::Point2f>(idx, 0).x - proj_pts.at<cv::Point2d>(idx, 0).x;
         double dy = corners.at<cv::Point2f>(idx, 0).y - proj_pts.at<cv::Point2d>(idx, 0).y;
         residual += std::sqrt(dx * dx + dy * dy);

@@ -30,7 +30,7 @@ namespace YAML {
 template<> struct convert<Eigen::Affine3d> {
   static Node encode(const Eigen::Affine3d & rhs) {
     YAML::Node node = YAML::Load("[]");
-    for (int idx = 0; idx < 16; ++idx) node[idx] = rhs(idx / 4, idx % 4);
+    for (size_t idx = 0; idx < 16; ++idx) node[idx] = rhs(idx / 4, idx % 4);
     return node;
   }
 

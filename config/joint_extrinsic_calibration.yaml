@@ -8,7 +8,7 @@ image_directory_path: [
     "/data/small_scale_joint_camera_extrinsic_data/left_event_camera/",
     "/data/small_scale_joint_camera_extrinsic_data/rgbd_color_camera/"
   ]
-intrisic_yaml_path: [
+intrinsic_yaml_path: [
     "/data/right_regular_camera_intrinsic_results.yaml", # <-- follow the same order as above
     "/data/left_regular_camera_intrinsic_results.yaml",
     "/data/right_event_camera_intrinsic_results.yaml",

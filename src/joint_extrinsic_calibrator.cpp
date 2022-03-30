@@ -128,10 +128,10 @@ int main(int argc, char ** argv) {
   ros::param::get("checkerboard_square_size", board_square_size);
   Checkerboard board = Checkerboard(board_width, board_height, board_square_size);
 
-  // Read each camera's intrinsic from the input path.
+  // Read each camera's intrinsic result from the input path.
   std::vector<CameraIntrinsics> intrinsic_vec;
   std::vector<std::string>      intrinsic_path_vec;
-  ros::param::get("/intrisic_yaml_path", intrinsic_path_vec);
+  ros::param::get("/intrinsic_yaml_path", intrinsic_path_vec);
   for (std::string intrinsic_path : intrinsic_path_vec) {
     intrinsic_vec.emplace_back(intrinsic_path);
     if (!intrinsic_vec.back().status()) {
@@ -156,7 +156,7 @@ int main(int argc, char ** argv) {
       ros::shutdown();
       return -1;
     } else if (reader_vec.back().directory_name() != intrinsic_vec[idx].name()) {
-      std::cerr << colorful_char::error("The order of the intrisic yaml does not match with the order of the image directory. ")
+      std::cerr << colorful_char::error("The order of the intrisic yaml does not match with the order of the image directory.")
                 << std::endl;
       ros::shutdown();
       return -1;
@@ -187,7 +187,7 @@ int main(int argc, char ** argv) {
         cv::cornerSubPix(gray_img, corners, cv::Size(11, 11), cv::Size(-1, -1),
                          cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 20, 0.01));
         cv::drawChessboardCorners(img, board.size(), corners, true);
-        for (int pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
+        for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
           corners_vec[cam_idx][img_idx].emplace_back(corners.at<cv::Point2f>(pt_idx, 0).x, corners.at<cv::Point2f>(pt_idx, 0).y);
       } else {
         no_checkerboard_found = true;
@@ -285,9 +285,10 @@ int main(int argc, char ** argv) {
           .normalized());
 
   // Output extrinsic results both on terminal and in yaml file.
-  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_extrinsic_results.yaml");
+  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_camera_extrinsic_results.yaml");
   YAML::Node    output_yaml;
-  for (int idx = 0; idx < cam_num; ++idx) {
+  output_yaml["camera_number"] = cam_num;
+  for (size_t idx = 0; idx < cam_num; ++idx) {
     output_yaml["cam" + std::to_string(idx)]["camera_name"] = intrinsic_vec[idx].name();
     if (idx == 0) continue;
     std::cout << colorful_char::info("Transformation from " + intrinsic_vec[idx].name() + " to " + intrinsic_vec[0].name() + ": ")

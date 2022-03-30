@@ -21,11 +21,8 @@ public:
   std::string              directory_name() { return dir_name_; }
   int                      size() { return img_vec_.size(); }
   cv::Mat &                image(size_t index) { return img_vec_[index]; }
-  std::vector<cv::Mat> &   image_vector() { return img_vec_; }
   std::string              image_name(size_t index) { return img_name_vec_[index]; }
-  std::vector<std::string> image_name_vector() { return img_name_vec_; }
   std::string              image_path(size_t index) { return img_path_vec_[index]; }
-  std::vector<std::string> image_path_vector() { return img_path_vec_; }
 };
 
 // Validate and read each image in the input directory.

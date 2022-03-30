@@ -1,5 +1,5 @@
-#ifndef CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
-#define CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
+#ifndef CALIB_TOOLBOX_CAMERA_INTRINSICS_HPP_
+#define CALIB_TOOLBOX_CAMERA_INTRINSICS_HPP_
 
 #include <opencv2/core.hpp>
 #include <opencv2/opencv.hpp>
@@ -57,4 +57,4 @@ CameraIntrinsics::CameraIntrinsics(std::string yaml_path) : valid_(true) {
   cv::initUndistortRectifyMap(cam_mtx_, dist_coeff_, rect_mtx_, proj_mtx_, size_, CV_32FC1, undist_map_x_, undist_map_y_);
 }
 
-#endif  // CALIB_TOOLBOX_CAMERA_INTRINSIC_HPP_
+#endif  // CALIB_TOOLBOX_CAMERA_INTRINSICS_HPP_
