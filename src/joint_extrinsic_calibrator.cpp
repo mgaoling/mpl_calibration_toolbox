@@ -149,7 +149,7 @@ int main(int argc, char ** argv) {
     reader_vec.emplace_back(dir_path_vec[idx]);
     if (!reader_vec.back().status()) {
       ros::shutdown();
-      return 0;
+      return -1;
     } else if (idx >= cam_num) {
       std::cerr << colorful_char::error("The number of the intrisic yaml does not match with the number of the image directory.")
                 << std::endl;

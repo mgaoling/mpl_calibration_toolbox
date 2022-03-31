@@ -17,12 +17,12 @@ private:
 
 public:
   ImageReader(std::string dir_path);
-  bool                     status() { return valid_; }
-  std::string              directory_name() { return dir_name_; }
-  int                      size() { return img_vec_.size(); }
-  cv::Mat &                image(size_t index) { return img_vec_[index]; }
-  std::string              image_name(size_t index) { return img_name_vec_[index]; }
-  std::string              image_path(size_t index) { return img_path_vec_[index]; }
+  bool        status() { return valid_; }
+  std::string directory_name() { return dir_name_; }
+  int         size() { return img_vec_.size(); }
+  cv::Mat &   image(size_t index) { return img_vec_[index]; }
+  std::string image_name(size_t index) { return img_name_vec_[index]; }
+  std::string image_path(size_t index) { return img_path_vec_[index]; }
 };
 
 // Validate and read each image in the input directory.

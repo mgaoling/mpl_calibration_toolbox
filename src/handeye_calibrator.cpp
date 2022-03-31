@@ -34,7 +34,7 @@ int main(int argc, char ** argv) {
   CameraIntrinsics intrinsic = CameraIntrinsics(intrinsic_path);
   if (!intrinsic.status()) {
     ros::shutdown();
-    return 0;
+    return -1;
   }
 
   // Prepare rosbag for viewing.
@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
   ros::param::get("/rosbag_path", bag_path);
   if (!file_path_check(bag_path)) {
     ros::shutdown();
-    return 0;
+    return -1;
   }
   rosbag::Bag bag;
   bag.open(bag_path, rosbag::bagmode::Read);

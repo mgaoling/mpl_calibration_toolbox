@@ -17,7 +17,7 @@ int main(int argc, char ** argv) {
   ImageReader reader = ImageReader(dir_path);
   if (!reader.status()) {
     ros::shutdown();
-    return 0;
+    return -1;
   }
 
   // Publish each image via ROS communication.
