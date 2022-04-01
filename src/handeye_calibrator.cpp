@@ -25,14 +25,14 @@ int main(int argc, char ** argv) {
   Checkerboard board = Checkerboard(board_width, board_height, board_square_size);
 
   // Read camera's intrinsic result from the input path.
-  std::string intrinsic_path;
-  ros::param::get("/intrinsic_yaml_path", intrinsic_path);
-  if (!fs::exists(intrinsic_path)) {
-    if (intrinsic_path.front() != '/') intrinsic_path = '/' + intrinsic_path;
-    intrinsic_path = ros::package::getPath("mpl_calibration_toolbox") + intrinsic_path;
+  std::string intrinsics_path;
+  ros::param::get("/intrinsic_yaml_path", intrinsics_path);
+  if (!fs::exists(intrinsics_path)) {
+    if (intrinsics_path.front() != '/') intrinsics_path = '/' + intrinsics_path;
+    intrinsics_path = ros::package::getPath("mpl_calibration_toolbox") + intrinsics_path;
   }
-  CameraIntrinsics intrinsic = CameraIntrinsics(intrinsic_path);
-  if (!intrinsic.status()) {
+  CameraIntrinsics intrinsics = CameraIntrinsics(intrinsics_path);
+  if (!intrinsics.status()) {
     ros::shutdown();
     return -1;
   }
@@ -113,7 +113,7 @@ int main(int argc, char ** argv) {
       cv::cornerSubPix(gray_img, corners, cv::Size(11, 11), cv::Size(-1, -1),
                        cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 20, 0.01));
       cv::drawChessboardCorners(img, board.size(), corners, true);
-      if (!cv::solvePnP(board.object_points(), corners, intrinsic.camera_matrix(), intrinsic.distortion_coefficients(), cam_r_vec,
+      if (!cv::solvePnP(board.object_points(), corners, intrinsics.camera_matrix(), intrinsics.distortion_coefficients(), cam_r_vec,
                         cam_t_vec)) {
         std::cout << colorful_char::warning("Could not solve the PnP problem.") << std::endl;
         ++num_blurred_imgs;
@@ -123,7 +123,7 @@ int main(int argc, char ** argv) {
         }
         continue;
       }
-      cv::projectPoints(board.object_points(), cam_r_vec, cam_t_vec, intrinsic.camera_matrix(), intrinsic.distortion_coefficients(),
+      cv::projectPoints(board.object_points(), cam_r_vec, cam_t_vec, intrinsics.camera_matrix(), intrinsics.distortion_coefficients(),
                         proj_pts);
       double residual = 0;
       for (size_t idx = 0; idx < board.object_points().size(); ++idx) {
@@ -179,11 +179,11 @@ int main(int argc, char ** argv) {
   // Output extrinsic results both on terminal and in yaml file.
   std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/camera_mocap_extrinsic_results.yaml");
   YAML::Node    output_yaml;
-  output_yaml["camera_name"] = intrinsic.name();
-  std::cout << colorful_char::info("Transformation from " + intrinsic.name() + " to body: ") << std::endl;
+  output_yaml["camera_name"] = intrinsics.name();
+  std::cout << colorful_char::info("Transformation from " + intrinsics.name() + " to body: ") << std::endl;
   std::cout << T.matrix() << std::endl;
   output_yaml["T_body_cam"] = T;
-  std::cout << colorful_char::info("Transformation from body to " + intrinsic.name() + ": ") << std::endl;
+  std::cout << colorful_char::info("Transformation from body to " + intrinsics.name() + ": ") << std::endl;
   std::cout << T.inverse().matrix() << std::endl;
   output_yaml["T_cam_body"] = T.inverse();
   fout << output_yaml;

@@ -36,17 +36,17 @@ int main(int argc, char ** argv) {
   Checkerboard board = Checkerboard(board_width, board_height, board_square_size);
 
   // Read each camera's intrinsic result from the input path.
-  std::vector<CameraIntrinsics> intrinsic_vec;
-  std::vector<std::string>      intrinsic_path_vec;
-  ros::param::get("/intrinsic_yaml_path", intrinsic_path_vec);
-  for (std::string intrinsic_path : intrinsic_path_vec) {
-    intrinsic_vec.emplace_back(intrinsic_path);
-    if (!intrinsic_vec.back().status()) {
+  std::vector<CameraIntrinsics> intrinsics_vec;
+  std::vector<std::string>      intrinsics_path_vec;
+  ros::param::get("/intrinsic_yaml_path", intrinsics_path_vec);
+  for (std::string intrinsics_path : intrinsics_path_vec) {
+    intrinsics_vec.emplace_back(intrinsics_path);
+    if (!intrinsics_vec.back().status()) {
       ros::shutdown();
       return -1;
     }
   }
-  int cam_num = intrinsic_vec.size();
+  int cam_num = intrinsics_vec.size();
 
   // Read each camera's images from the input directory path.
   std::vector<ImageReader> reader_vec;
@@ -62,7 +62,7 @@ int main(int argc, char ** argv) {
                 << std::endl;
       ros::shutdown();
       return -1;
-    } else if (reader_vec.back().directory_name() != intrinsic_vec[idx].name()) {
+    } else if (reader_vec.back().directory_name() != intrinsics_vec[idx].name()) {
       std::cerr << colorful_char::error("The order of the intrisic yaml does not match with the order of the image directory.")
                 << std::endl;
       ros::shutdown();
@@ -84,7 +84,7 @@ int main(int argc, char ** argv) {
     corners_vec.emplace_back(std::vector<std::vector<cv::Point2d>>());
     for (size_t img_idx = 0; img_idx < img_num; ++img_idx) {
       cv::Mat img = reader_vec[cam_idx].image(img_idx);
-      cv::remap(img, img, intrinsic_vec[cam_idx].undistortion_map_x(), intrinsic_vec[cam_idx].undistortion_map_y(), cv::INTER_LINEAR);
+      cv::remap(img, img, intrinsics_vec[cam_idx].undistortion_map_x(), intrinsics_vec[cam_idx].undistortion_map_y(), cv::INTER_LINEAR);
       cv::Mat gray_img;
       if (img.channels() == 1) gray_img = img.clone();
       else
@@ -103,7 +103,7 @@ int main(int argc, char ** argv) {
         std::cout << colorful_char::warning("No checkerboard pattern found in image: " + reader_vec[cam_idx].image_path(img_idx))
                   << std::endl;
       }
-      cv::putText(img, intrinsic_vec[cam_idx].name() + " " + reader_vec[cam_idx].image_name(img_idx), cv::Point(cv::Size(20, 35)),
+      cv::putText(img, intrinsics_vec[cam_idx].name() + " " + reader_vec[cam_idx].image_name(img_idx), cv::Point(cv::Size(20, 35)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
       if (vis_on) {
         cv::imshow("Checkerboard Pattern", img);
@@ -158,7 +158,7 @@ int main(int argc, char ** argv) {
     double * param_t_cr_b = t_cr_b_vec.data() + img_idx * 3;
     for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
       problem.AddResidualBlock(
-        CamRefPNP::create(board.object_points()[pt_idx], corners_vec[0][img_idx][pt_idx], intrinsic_vec[0].projection_matrix()), nullptr,
+        CamRefPNP::create(board.object_points()[pt_idx], corners_vec[0][img_idx][pt_idx], intrinsics_vec[0].projection_matrix()), nullptr,
         param_q_cr_b, param_t_cr_b);  // At here, 0 represents the first camera (as reference).
     }
   }
@@ -170,7 +170,7 @@ int main(int argc, char ** argv) {
       double * param_t_cr_b = t_cr_b_vec.data() + img_idx * 3;
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx)
         problem.AddResidualBlock(CamXPNP::create(board.object_points()[pt_idx], corners_vec[cam_idx + 1][img_idx][pt_idx],
-                                                 intrinsic_vec[cam_idx + 1].projection_matrix()),  // Note that camera starts from 1.
+                                                 intrinsics_vec[cam_idx + 1].projection_matrix()),  // Note that camera starts from 1.
                                  nullptr, param_q_cr_b, param_t_cr_b, param_q_cx_cr, param_t_cx_cr);
     }
   }
@@ -202,9 +202,9 @@ int main(int argc, char ** argv) {
   YAML::Node    output_yaml;
   output_yaml["camera_number"] = cam_num;
   for (size_t idx = 0; idx < cam_num; ++idx) {
-    output_yaml["cam" + std::to_string(idx)]["camera_name"] = intrinsic_vec[idx].name();
+    output_yaml["cam" + std::to_string(idx)]["camera_name"] = intrinsics_vec[idx].name();
     if (idx == 0) continue;
-    std::cout << colorful_char::info("Transformation from " + intrinsic_vec[idx].name() + " to " + intrinsic_vec[0].name() + ": ")
+    std::cout << colorful_char::info("Transformation from " + intrinsics_vec[idx].name() + " to " + intrinsics_vec[0].name() + ": ")
               << std::endl;
     std::cout << T_cx_cr_vec[idx - 1].inverse().matrix() << std::endl;
     output_yaml["cam" + std::to_string(idx)]["T_cam0_cam" + std::to_string(idx)] = T_cx_cr_vec[idx - 1].inverse();
@@ -217,7 +217,7 @@ int main(int argc, char ** argv) {
     double residual = 0;
     for (size_t img_idx = 0; img_idx < img_num; ++img_idx) {
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
-        cv::Point2d proj_corner = ProjectPts(board.object_points()[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(),
+        cv::Point2d proj_corner = ProjectPts(board.object_points()[pt_idx], intrinsics_vec[cam_idx + 1].projection_matrix(),
                                              T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
         residual += CalcReprojectionError(corners_vec[cam_idx + 1][img_idx][pt_idx], proj_corner);
         cv::circle(reader_vec[cam_idx + 1].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);
