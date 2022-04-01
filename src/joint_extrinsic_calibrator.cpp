@@ -1,105 +1,12 @@
 #include <CameraIntrinsics.hpp>
+#include <CeresCostFunctor.hpp>
 #include <Checkerboard.hpp>
 #include <ImageReader.hpp>
-#include <ceres/ceres.h>
-#include <ceres/rotation.h>
 #include <ros/ros.h>
 
-// PNP-based Cost Functor (residual) for the first camera (reference Camera)
-class CamRefPNP {
-private:
-  cv::Point3d obj_pts_;
-  cv::Point2d img_pts_;
-  cv::Mat     proj_mtx_;
-
-public:
-  CamRefPNP(const cv::Point3d & obj_pts, const cv::Point2d & img_pts, const cv::Mat & projection_matrix) :
-    obj_pts_(obj_pts), img_pts_(img_pts), proj_mtx_(projection_matrix) { }
-
-  template<typename T> bool operator()(const T * const q_cr_b, const T * const t_cr_b, T * residual) const {
-    // Coordinate transformation from the Board frame (world frame) to the first Camera frame (Reference frame)
-    // P_CAM_REF_3D = T_CAM_REF_BOARD(q_cr_b, t_cr_b) * P_BOARD_3D
-    T pt_in[3], pt_out[3];
-    pt_in[0] = T(obj_pts_.x);
-    pt_in[1] = T(obj_pts_.y);
-    pt_in[2] = T(obj_pts_.z);
-    ceres::QuaternionRotatePoint(q_cr_b, pt_in, pt_out);
-    pt_out[0] += t_cr_b[0];
-    pt_out[1] += t_cr_b[1];
-    pt_out[2] += t_cr_b[2];
-
-    // Project 3D points onto 2D image frame with projection matrix.
-    // P_2D = Projection_Matrix * P_3D
-    T proj_u = proj_mtx_.at<double>(0, 0) * pt_out[0] / pt_out[2] + proj_mtx_.at<double>(0, 2);
-    T proj_v = proj_mtx_.at<double>(1, 1) * pt_out[1] / pt_out[2] + proj_mtx_.at<double>(1, 2);
-
-    // Construct the residuals by minimizing the reprojection errors.
-    T corner_u  = T(img_pts_.x);
-    T corner_v  = T(img_pts_.y);
-    residual[0] = proj_u - corner_u;
-    residual[1] = proj_v - corner_v;
-    return true;
-  }
-
-  static ceres::CostFunction * create(const cv::Point3d obj_pts, const cv::Point2d img_pts, const cv::Mat projection_matrix) {
-    return new ceres::AutoDiffCostFunction<CamRefPNP, 2, 4, 3>(new CamRefPNP(obj_pts, img_pts, projection_matrix));
-  }
-};
-
-// PNP-based Cost Functor (residual) for any other camera
-class CamXPNP {
-private:
-  cv::Point3d obj_pts_;
-  cv::Point2d img_pts_;
-  cv::Mat     proj_mtx_;
-
-public:
-  CamXPNP(const cv::Point3d obj_pts, const cv::Point2d img_pts, const cv::Mat projection_matrix) :
-    obj_pts_(obj_pts), img_pts_(img_pts), proj_mtx_(projection_matrix) { }
-
-  template<typename T>
-  bool operator()(const T * const q_cr_b, const T * const t_cr_b, const T * const q_cx_cr, const T * const t_cx_cr, T * residual) const {
-    // Construct coordinate transformation from the Board frame (world frame) to Camera X frame
-    // T_CAM_X_BOARD(q_cx_b, t_cx_b) = T_CAM_X_CAM_REF(q_cx_cr, t_cx_cr) * T_CAM_REF_BOARD(q_cr_b, t_cr_b)
-    T q_cx_b[4], t_cx_b[3];
-    ceres::QuaternionProduct(q_cx_cr, q_cr_b, q_cx_b);
-    ceres::QuaternionRotatePoint(q_cx_cr, t_cr_b, t_cx_b);
-    t_cx_b[0] += t_cx_cr[0];
-    t_cx_b[1] += t_cx_cr[1];
-    t_cx_b[2] += t_cx_cr[2];
-
-    // Coordinate transformation from the Board frame (world frame) to Camera X frame
-    // P_CAM_X_3D = T_CAM_X_BOARD(q_cx_b, t_cx_b) * P_BOARD_3D
-    T pt_in[3], pt_out[3];
-    pt_in[0] = T(obj_pts_.x);
-    pt_in[1] = T(obj_pts_.y);
-    pt_in[2] = T(obj_pts_.z);
-    ceres::QuaternionRotatePoint(q_cx_b, pt_in, pt_out);
-    pt_out[0] += t_cx_b[0];
-    pt_out[1] += t_cx_b[1];
-    pt_out[2] += t_cx_b[2];
-
-    // Project 3D points onto 2D image frame with projection matrix.
-    // P_2D = Projection_Matrix * P_3D
-    T proj_u = proj_mtx_.at<double>(0, 0) * pt_out[0] / pt_out[2] + proj_mtx_.at<double>(0, 2);
-    T proj_v = proj_mtx_.at<double>(1, 1) * pt_out[1] / pt_out[2] + proj_mtx_.at<double>(1, 2);
-
-    // Construct the residuals by minimizing the reprojection errors.
-    T corner_u  = T(img_pts_.x);
-    T corner_v  = T(img_pts_.y);
-    residual[0] = proj_u - corner_u;
-    residual[1] = proj_v - corner_v;
-    return true;
-  }
-
-  static ceres::CostFunction * create(const cv::Point3d obj_pts, const cv::Point2d img_pts, const cv::Mat projection_matrix) {
-    return new ceres::AutoDiffCostFunction<CamXPNP, 2, 4, 3, 4, 3>(new CamXPNP(obj_pts, img_pts, projection_matrix));
-  }
-};
-
 // First apply the coordinate transformation, then project 3D points onto 2D image frame with projection matrix.
-cv::Point2d PNP(const cv::Point3d & pt, const cv::Mat & projection_matrix, const Eigen::Affine3d & transformation) {
-  Eigen::Vector3d obj_p(pt.x, pt.y, pt.z);
+cv::Point2d ProjectPts(const cv::Point3d & point, const cv::Mat & projection_matrix, const Eigen::Affine3d & transformation) {
+  Eigen::Vector3d obj_p(point.x, point.y, point.z);
   obj_p    = transformation.rotation() * obj_p + transformation.translation();
   double u = projection_matrix.at<double>(0, 0) * obj_p.x() / obj_p.z() + projection_matrix.at<double>(0, 2);
   double v = projection_matrix.at<double>(1, 1) * obj_p.y() / obj_p.z() + projection_matrix.at<double>(1, 2);
@@ -107,8 +14,8 @@ cv::Point2d PNP(const cv::Point3d & pt, const cv::Mat & projection_matrix, const
 }
 
 // Calculate the reprojection error between a detected corner and a reprojected corner.
-double CalcReprojectionError(cv::Point2d & detected_corner, cv::Point2d & reproj_corner) {
-  return std::sqrt((detected_corner - reproj_corner).dot(detected_corner - reproj_corner));
+double CalcReprojectionError(cv::Point2d & detected_corner, cv::Point2d & reprojected_corner) {
+  return std::sqrt((detected_corner - reprojected_corner).dot(detected_corner - reprojected_corner));
 }
 
 // ------------------------------------------------------------------------- //
@@ -168,6 +75,8 @@ int main(int argc, char ** argv) {
   }
   int img_num = reader_vec.front().size();
 
+  // ----------------------------------------------------------------------- //
+
   // Detect checkerboard pattern on each undistorted image.
   bool                                               no_checkerboard_found = false;
   std::vector<std::vector<std::vector<cv::Point2d>>> corners_vec;
@@ -208,6 +117,8 @@ int main(int argc, char ** argv) {
     ros::shutdown();
     return -1;
   }
+
+  // ----------------------------------------------------------------------- //
 
   // Optimization Objective: minimize the 2D-3D reprojection errors (PNP) for each camera
   ceres::Problem      problem;
@@ -284,6 +195,8 @@ int main(int argc, char ** argv) {
       * Eigen::Quaterniond(q_cr_b_vec[img_idx * 4], q_cr_b_vec[img_idx * 4 + 1], q_cr_b_vec[img_idx * 4 + 2], q_cr_b_vec[img_idx * 4 + 3])
           .normalized());
 
+  // ----------------------------------------------------------------------- //
+
   // Output extrinsic results both on terminal and in yaml file.
   std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_camera_extrinsic_results.yaml");
   YAML::Node    output_yaml;
@@ -304,16 +217,16 @@ int main(int argc, char ** argv) {
     double residual = 0;
     for (size_t img_idx = 0; img_idx < img_num; ++img_idx) {
       for (size_t pt_idx = 0; pt_idx < board_width * board_height; ++pt_idx) {
-        cv::Point2d proj_corner =
-          PNP(board.object_points()[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(), T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
+        cv::Point2d proj_corner = ProjectPts(board.object_points()[pt_idx], intrinsic_vec[cam_idx + 1].projection_matrix(),
+                                             T_cx_cr_vec[cam_idx] * T_cr_b_vec[img_idx]);
         residual += CalcReprojectionError(corners_vec[cam_idx + 1][img_idx][pt_idx], proj_corner);
         cv::circle(reader_vec[cam_idx + 1].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);
       }
       residual /= board_width * board_height;
       cv::putText(reader_vec[cam_idx + 1].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
-      if (residual >= 2)
-        std::cout << colorful_char::warning("The overall reprojection error is higher than 2pix in image: "
+      if (residual >= 1)
+        std::cout << colorful_char::warning("The overall reprojection error is higher than 1pix in image: "
                                             + reader_vec[cam_idx + 1].image_path(img_idx))
                   << std::endl;
       if (vis_on) {
