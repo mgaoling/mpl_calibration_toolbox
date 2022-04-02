@@ -5,6 +5,8 @@
 #include <Eigen/Geometry>
 #include <filesystem>
 #include <iostream>
+#include <opencv2/core.hpp>
+#include <opencv2/opencv.hpp>
 #include <ros/package.h>
 #include <string>
 #include <yaml-cpp/yaml.h>
@@ -76,6 +78,20 @@ bool file_path_check(std::string & path) {
     return false;
   }
   return true;
+}
+
+// First apply the coordinate transformation, then project 3D points onto 2D image frame with projection matrix.
+cv::Point2d ProjectPoints(const cv::Point3d & point, const cv::Mat & projection_matrix, const Eigen::Affine3d & transformation) {
+  Eigen::Vector3d obj_p(point.x, point.y, point.z);
+  obj_p    = transformation.rotation() * obj_p + transformation.translation();
+  double u = projection_matrix.at<double>(0, 0) * obj_p.x() / obj_p.z() + projection_matrix.at<double>(0, 2);
+  double v = projection_matrix.at<double>(1, 1) * obj_p.y() / obj_p.z() + projection_matrix.at<double>(1, 2);
+  return cv::Point2d(u, v);
+}
+
+// Calculate the reprojection error between a detected corner and a reprojected corner.
+double CalcReprojectionError(cv::Point2d & detected_corner, cv::Point2d & reprojected_corner) {
+  return std::sqrt((detected_corner - reprojected_corner).dot(detected_corner - reprojected_corner));
 }
 
 #endif  // CALIB_TOOLBOX_UTILITY_HPP_

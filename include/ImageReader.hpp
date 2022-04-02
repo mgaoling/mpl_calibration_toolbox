@@ -1,8 +1,6 @@
 #ifndef CALIB_TOOLBOX_IMAGE_READER_HPP_
 #define CALIB_TOOLBOX_IMAGE_READER_HPP_
 
-#include <opencv2/core.hpp>
-#include <opencv2/opencv.hpp>
 #include <utility.hpp>
 
 namespace fs = std::filesystem;
