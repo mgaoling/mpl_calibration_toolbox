@@ -5,7 +5,8 @@
 This toolbox is a ROS workspace integrating with a set of easy-to-use calibration functions, including:
 
 - [Camera Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-intrinsic-calibration)
-- [IMU Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#intrinsic-calibration)
+- [IMU Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#imu-intrinsic-calibration)
+- [Joint Camera Extrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#joint-camera-extrinsic-calibration)
 - [Camera-IMU Extrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-imu-extrinsic-calibration)
 
 # Getting Started
@@ -32,7 +33,7 @@ source ~/catkin_ws/devel/setup.bash
 
 ### How to reproduce the result?
 
-- Download the intrinsic data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/) and place it into the `data` folder. Here, we use the `right_event_camera_intrinsic_data.zip` file as an example. Decompress the file by:
+- Download the intrinsic data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/), and place it into the `data` folder. Here, we use the `right_event_camera_intrinsic_data.zip` file as an example. Decompress the file by:
 
 ```
 roscd mpl_calibration_toolbox/data
@@ -85,6 +86,45 @@ rosrun allan_variance_ros analysis.py --data allan_variance.csv
 ### How to calibrate by yourself?
 
 Please refer to the [Allan Variance ROS toolbox](https://github.com/ori-drs/allan_variance_ros) for more details.
+
+# Joint Camera Extrinsic Calibration
+
+### How to reproduce the result?
+
+- Download the joint camera extrinsic data bag and all related intrinsic results from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/), and place them into the `data` folder. Here, we use the `small_scale_joint_camera_extrinsic_data.zip` file as an example. Decompress the file by:
+
+```
+roscd mpl_calibration_toolbox/data
+unzip small_scale_joint_camera_extrinsic_data.zip
+```
+
+- Check and modify the parameters in the `config/joint_extrinsic_calibration.yaml`, then launch the joint camera extrinsic calibration by:
+
+```
+roslaunch mpl_calibration_toolbox joint_extrinsic_calibration.launch
+```
+
+### How to calibrate by yourself?
+
+- Launch the ROS driver to publish data from the camera to ROS topics. 
+
+- (Optional) If this is an event camera, install the [MPL Dataset Toolbox](https://github.com/mgaoling/mpl_dataset_toolbox), then launch the event visualization by:
+
+```
+roslaunch mpl_dataset_toolbox event_visualization.launch
+```
+
+- Open the `data/metavision_calibration_pattern_chessboard.html` file on another screen.
+
+- Run `rqt` in another terminal to display all the regular image frames, along with accumulated event frames if exist.
+
+- Hold the sensor suite still in one place, save all the frames as images and place them into a folder following the same format as in `small_scale_joint_camera_extrinsic_data`. Repeat this process ten to twenty times at various places.
+
+- Check and modify the parameters in the `config/joint_extrinsic_calibration.yaml`, then launch the joint extrinsic camera calibration by:
+
+```
+roslaunch mpl_calibration_toolbox joint_extrinsic_calibration.launch
+```
 
 # Camera-IMU Extrinsic Calibration
 

@@ -43,17 +43,15 @@ int main(int argc, char ** argv) {
       ros::shutdown();
       return -1;
     } else if (idx >= cam_num) {
-      std::cerr << colorful_char::error("The number of the intrisic yaml does not match with the number of the image directory.")
-                << std::endl;
+      ROS_ERROR("%s", colorful_char::error("The number of the intrisic yaml does not match with the image directory.").c_str());
       ros::shutdown();
       return -1;
     } else if (img_reader_vec.back().directory_name() != intrinsics_vec[idx].name()) {
-      std::cerr << colorful_char::error("The order of the intrisic yaml does not match with the order of the image directory.")
-                << std::endl;
+      ROS_ERROR("%s", colorful_char::error("The order of the intrisic yaml does not match with the image directory.").c_str());
       ros::shutdown();
       return -1;
     } else if (img_reader_vec.front().size() != img_reader_vec.back().size()) {
-      std::cerr << colorful_char::error("The number of images under each directory is not consistent with each other.") << std::endl;
+      ROS_ERROR("%s", colorful_char::error("The number of images under each directory is not consistent with each other.").c_str());
       ros::shutdown();
       return -1;
     }
@@ -87,14 +85,13 @@ int main(int argc, char ** argv) {
           corners_vec[cam_idx][img_idx].emplace_back(corners.at<cv::Point2f>(pt_idx, 0).x, corners.at<cv::Point2f>(pt_idx, 0).y);
       } else {
         warning_detected = true;
-        std::cout << colorful_char::warning("No checkerboard pattern found in image: " + img_reader_vec[cam_idx].image_path(img_idx))
-                  << std::endl;
+        ROS_WARN("%s", colorful_char::warning("No pattern found in image: " + img_reader_vec[cam_idx].image_path(img_idx)).c_str());
       }
 
       if (!cv::solvePnP(board.object_points(), corners, intrinsics_vec[cam_idx].camera_matrix(),
                         intrinsics_vec[cam_idx].distortion_coefficients(), cam_r_vec, cam_t_vec)) {
         warning_detected = true;
-        std::cout << colorful_char::warning("Could not solve the PnP problem.") << std::endl;
+        ROS_WARN("%s", colorful_char::warning("Could not solve the PnP problem.").c_str());
       }
       cv::Mat cam_r_mtx;
       cv::Rodrigues(cam_r_vec, cam_r_mtx);
@@ -113,7 +110,7 @@ int main(int argc, char ** argv) {
   }
   if (vis_on) cv::destroyAllWindows();
   if (warning_detected) {
-    std::cerr << colorful_char::error("Calibration terminated. Please remove the unwanted images.") << std::endl;
+    ROS_ERROR("%s", colorful_char::error("Calibration terminated. Please remove the unwanted images.").c_str());
     ros::shutdown();
     return -1;
   }
@@ -124,7 +121,6 @@ int main(int argc, char ** argv) {
   // point cloud scannings (only in Camera-LiDAR calibration).
   ceres::Problem      problem;
   std::vector<double> unit_q{1, 0, 0, 0};  // Unit Quaternion
-  std::vector<double> unit_t{0, 0, 1};     // Unit Translation
   std::vector<double> zero_t{0, 0, 0};     // Zero Translation
   std::vector<double> q_cr_b_vec;          // Coordinate Transformation
   std::vector<double> t_cr_b_vec;          // --> from the Board frame (world frame) to the first Camera frame (Reference frame)
@@ -205,7 +201,7 @@ int main(int argc, char ** argv) {
   // ----------------------------------------------------------------------- //
 
   // Output extrinsic results both on terminal and in yaml file.
-  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/joint_camera_extrinsic_results.yaml");
+  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/data/joint_camera_extrinsic_results.yaml");
   YAML::Node    output_yaml;
   output_yaml["camera_number"] = cam_num;
   for (size_t idx = 0; idx < cam_num; ++idx) {
@@ -218,6 +214,7 @@ int main(int argc, char ** argv) {
   }
   fout << output_yaml;
   fout.close();
+  std::cout << colorful_char::info("Extrinsic results are saved in /data/joint_camera_extrinsic_results.yaml") << std::endl;
 
   // Run validation-used visualization on reprojection errors.
   for (size_t cam_idx = 0; cam_idx < cam_num; ++cam_idx) {
@@ -237,9 +234,9 @@ int main(int argc, char ** argv) {
       cv::putText(img_reader_vec[cam_idx].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
       if (residual >= 2)
-        std::cout << colorful_char::warning("The overall reprojection error is higher than 2pix on image: "
-                                            + img_reader_vec[cam_idx].image_path(img_idx))
-                  << std::endl;
+        ROS_WARN("%s", colorful_char::warning("The overall reprojection error is higher than 2pix on image: "
+                                              + img_reader_vec[cam_idx].image_path(img_idx))
+                         .c_str());
       if (vis_on) {
         cv::imshow("Reprojection Results", img_reader_vec[cam_idx].image(img_idx));
         cv::waitKey(0);

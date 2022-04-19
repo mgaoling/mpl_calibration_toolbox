@@ -1,3 +1,6 @@
+#ifndef CALIBRATION_TOOLBOX_CERES_COST_FUNCTOR_HPP_
+#define CALIBRATION_TOOLBOX_CERES_COST_FUNCTOR_HPP_
+
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 #include <opencv2/core.hpp>
@@ -44,7 +47,7 @@ public:
   }
 };
 
-// PNP-based Cost Functor for any other camera (cameras' extrinsics are unknown)
+// PNP-based Cost Functor for any other camera
 class CamXPNP {
 private:
   cv::Point3d obj_pts_;
@@ -94,3 +97,5 @@ public:
     return new ceres::AutoDiffCostFunction<CamXPNP, 2, 4, 3, 4, 3>(new CamXPNP(object_points, image_points, projection_matrix));
   }
 };
+
+#endif  // CALIBRATION_TOOLBOX_CERES_COST_FUNCTOR_HPP_
