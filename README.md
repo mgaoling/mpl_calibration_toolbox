@@ -5,6 +5,7 @@
 This toolbox is a ROS workspace integrating with a set of easy-to-use calibration functions, including:
 
 - [Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#intrinsic-calibration)
+- [Camera-IMU Extrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-imu-extrinsic-calibration)
 
 # Getting Started
 
@@ -66,3 +67,19 @@ rosrun camera_calibration cameracalibrator.py --size 9x6 --square [square_length
 - Move the checkerboard around in the camera frame. Click the `calibrate` button whenever you have collected enough data, and wait for the results to be displayed on the terminal.
 
 **Note:** It is recommended to double-check the corner extraction among all recorded images. Delete the unwanted images if necessary, and then reproduce the results for better accuracy.
+
+# Camera-IMU Extrinsic Calibration
+
+### How to reproduce the result?
+
+- Download and decompress the config file and the data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/#Intrinsics).
+
+- Install the [Kalibr toolbox](https://github.com/ethz-asl/kalibr), then launch the Camera-IMU extrinsic calibration by:
+
+```
+kalibr_calibrate_imu_camera --bag [data.bag] --cam cam.yaml --imu imu.yaml --target apriltag.yaml --timeoffset-padding 0.1
+```
+
+### How to calibrate by yourself?
+
+Please refer to the [WIKI page on Kalibr toolbox](https://github.com/ethz-asl/kalibr/wiki/camera-imu-calibration) for more details.
