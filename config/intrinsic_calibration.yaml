@@ -1,2 +1,2 @@
-image_directory_path: "/data/right_regular_camera_intrinsic_data/" 
+image_directory_path: "/data/right_event_camera_intrinsic_data/" 
 playback_speed: 1000 # [ms]

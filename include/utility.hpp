@@ -1,5 +1,5 @@
-#ifndef CALIB_TOOLBOX_UTILITY_HPP_
-#define CALIB_TOOLBOX_UTILITY_HPP_
+#ifndef CALIBRATION_TOOLBOX_UTILITY_HPP_
+#define CALIBRATION_TOOLBOX_UTILITY_HPP_
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -94,4 +94,4 @@ double CalcReprojectionError(cv::Point2d & detected_corner, cv::Point2d & reproj
   return std::sqrt((detected_corner - reprojected_corner).dot(detected_corner - reprojected_corner));
 }
 
-#endif  // CALIB_TOOLBOX_UTILITY_HPP_
+#endif  // CALIBRATION_TOOLBOX_UTILITY_HPP_

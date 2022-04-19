@@ -1,0 +1,129 @@
+<!DOCTYPE HTML>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Event-based camera calibration pattern</title>
+  <style type="text/css">
+    html {
+      margin: 0;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      height: inherit;
+    }
+
+    #geometry_txt {
+      font-family: 'arial';
+      font-size: 14pt;
+      z-index: 0;
+      padding: 2px;
+    }
+
+    button {
+      font-family: 'arial';
+      font-size: 16pt;
+      padding: 2px 10px 2px 10px;
+      margin: 2px;
+    }
+
+    canvas {
+      position: absolute;
+      z-index: -1;
+      left: 0;
+      top: 0;
+    }
+  </style>
+</head>
+
+<body>
+  <button onclick="start_pause_animation()"> Pause/start </button>
+  <span id='geometry_txt'>Xfps</span>
+  <canvas></canvas>
+  <script type="text/javascript">
+    // Get rows and columns from the URL "http://...html&rows=X&cols=Y"
+    const url_params = new URLSearchParams(window.location.search);
+    const n_rows = url_params.has('rows') ? parseInt(url_params.get('rows')) : 6
+    const n_cols = url_params.has('cols') ? parseInt(url_params.get('cols')) : 9
+    document.getElementById('geometry_txt').textContent =
+      "Inner corners: " + n_rows + " rows, " + n_cols + " columns."
+
+    // Fixed parameters.
+    const pattern_square_color = 'black'
+    const pattern_bg_color = 'white'
+    const bg_color = 'rgb(255, 255, 255)'
+
+    const canvas = document.querySelector('canvas')
+    const ctx = canvas.getContext('2d');
+
+    // Draw a single filled square.
+    function draw_square(x, y, side, color) {
+      ctx.fillStyle = color;
+      ctx.lineWidth = 0;
+      ctx.fillRect(x, y, side, side);
+    }
+
+    // Draw the whole (static) pattern once.
+    function draw_pattern(n_rows, n_cols, square_color, pattern_bg_color, bg_color) {
+      // Setting canvas size here also automatically resizes everything when
+      // the window is resized.
+      const width = canvas.width = window.innerWidth;
+      const height = canvas.height = window.innerHeight;
+
+      // Fill the background.
+      ctx.fillStyle = bg_color;
+      ctx.fillRect(0, 0, width, height);
+
+      // Compute steps and padding.
+      const step_px = Math.min(height / (n_rows + 1), width / (n_cols + 1))
+      const offset_x = (width - (n_cols * step_px)) / 2
+      const offset_y = (height - (n_rows * step_px)) / 2
+
+      // Fill the background of the pattern only.
+      ctx.fillStyle = pattern_bg_color;
+      ctx.fillRect(offset_x, offset_y, n_cols * step_px, n_rows * step_px)
+
+      // Draw the squares.
+      for (row = 0; row < n_rows; row++) {
+        for (col = 0; col < n_cols; col++) {
+          if (row % 2 == col % 2) {
+            draw_square(col * step_px + offset_x, row * step_px + offset_y, step_px, square_color)
+          }
+        }
+      }
+    }
+
+    let should_clear = false
+
+    function animate() {
+      if (should_clear) {
+        draw_pattern(n_rows + 1, n_cols + 1, pattern_bg_color, pattern_bg_color, bg_color)
+        should_clear = false
+      } else {
+        draw_pattern(n_rows + 1, n_cols + 1, pattern_square_color, pattern_bg_color, bg_color)
+        should_clear = true
+      }
+
+      request_animation_id = requestAnimationFrame(animate);
+    }
+
+    function start_pause_animation() {
+      if (request_animation_id == 0) {
+        animate()
+      } else {
+        cancelAnimationFrame(request_animation_id)
+        request_animation_id = 0
+        // When pausing, make sure we draw the pattern one last time.
+        draw_pattern(n_rows + 1, n_cols + 1, pattern_square_color, pattern_bg_color, bg_color)
+      }
+    }
+
+    // Start the animation.
+    let request_animation_id = 0
+    animate()
+  </script>
+</body>
+
+</html>

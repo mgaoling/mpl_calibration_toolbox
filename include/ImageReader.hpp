@@ -1,9 +1,7 @@
-#ifndef CALIB_TOOLBOX_IMAGE_READER_HPP_
-#define CALIB_TOOLBOX_IMAGE_READER_HPP_
+#ifndef CALIBRATION_TOOLBOX_IMAGE_READER_HPP_
+#define CALIBRATION_TOOLBOX_IMAGE_READER_HPP_
 
 #include <utility.hpp>
-
-namespace fs = std::filesystem;
 
 class ImageReader {
 private:
@@ -43,7 +41,7 @@ ImageReader::ImageReader(std::string dir_path) : valid_(true) {
   }
   std::sort(img_name_vec_.begin(), img_name_vec_.end());
   std::sort(img_path_vec_.begin(), img_path_vec_.end());
-  for (std::string & img_path : img_path_vec_) {
+  for (auto & img_path : img_path_vec_) {
     cv::Mat img = cv::imread(img_path, cv::IMREAD_COLOR);
     if (img.empty()) {
       valid_ = false;
@@ -54,4 +52,4 @@ ImageReader::ImageReader(std::string dir_path) : valid_(true) {
   }
 }
 
-#endif  // CALIB_TOOLBOX_IMAGE_READER_HPP_
+#endif  // CALIBRATION_TOOLBOX_IMAGE_READER_HPP_
