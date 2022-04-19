@@ -102,7 +102,7 @@ int main(int argc, char ** argv) {
       else
         cv::cvtColor(img, gray_img, cv::COLOR_BGR2GRAY);
       if (!cv::findChessboardCorners(gray_img, board.size(), corners)) {
-        std::cout << colorful_char::warning("No checkerboard pattern found.") << std::endl;
+        ROS_WARN("%s", colorful_char::warning("No pattern found.").c_str());
         ++num_blurred_imgs;
         if (vis_on) {
           cv::imshow("Checkerboard Pattern Visualization", img);
@@ -115,7 +115,7 @@ int main(int argc, char ** argv) {
       cv::drawChessboardCorners(img, board.size(), corners, true);
       if (!cv::solvePnP(board.object_points(), corners, intrinsics.camera_matrix(), intrinsics.distortion_coefficients(), cam_r_vec,
                         cam_t_vec)) {
-        std::cout << colorful_char::warning("Could not solve the PnP problem.") << std::endl;
+        ROS_WARN("%s", colorful_char::warning("Could not solve the PnP problem.").c_str());
         ++num_blurred_imgs;
         if (vis_on) {
           cv::imshow("Checkerboard Pattern Visualization", img);
@@ -136,7 +136,7 @@ int main(int argc, char ** argv) {
       cv::putText(img, "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 35)), cv::FONT_HERSHEY_DUPLEX, 1,
                   cv::Scalar(0, 255, 0), 2);
       if (residual >= residual_thershold) {
-        std::cout << colorful_char::warning("The overall reprojection error is higher than threshold.") << std::endl;
+        ROS_WARN("%s", colorful_char::warning("The overall reprojection error is higher than threshold.").c_str());
         ++num_blurred_imgs;
         if (vis_on) {
           cv::imshow("Checkerboard Pattern Visualization", img);
@@ -156,12 +156,12 @@ int main(int argc, char ** argv) {
     }
   }
   num_skipped_imgs = num_imgs - num_blurred_imgs - num_valid_imgs;
-  std::cout << colorful_char::info("Number of images:         " + std::to_string(num_imgs)) << std::endl
-            << colorful_char::info("Number of skipped images: " + std::to_string(num_skipped_imgs)) << std::endl
-            << colorful_char::info("Number of blurred images: " + std::to_string(num_blurred_imgs)) << std::endl
-            << colorful_char::info("Number of valid images:   " + std::to_string(num_valid_imgs)) << std::endl;
+  ROS_INFO("%s", colorful_char::info("Number of images:         " + std::to_string(num_imgs)).c_str());
+  ROS_INFO("%s", colorful_char::info("Number of skipped images: " + std::to_string(num_skipped_imgs)).c_str());
+  ROS_INFO("%s", colorful_char::info("Number of blurred images: " + std::to_string(num_blurred_imgs)).c_str());
+  ROS_INFO("%s", colorful_char::info("Number of valid images:   " + std::to_string(num_valid_imgs)).c_str());
   if (num_valid_imgs == 0) {
-    std::cerr << colorful_char::error("No valid image. Please reset the pnp_residual_thershold.") << std::endl;
+    ROS_ERROR("%s", colorful_char::error("No valid image. Please reset the pnp_residual_thershold.").c_str());
     ros::shutdown();
     return -1;
   }
@@ -177,7 +177,7 @@ int main(int argc, char ** argv) {
   Eigen::Affine3d T = Eigen::Translation3d(t_vec) * r_mtx;
 
   // Output extrinsic results both on terminal and in yaml file.
-  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/results/camera_mocap_extrinsic_results.yaml");
+  std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/data/camera_mocap_extrinsic_results.yaml");
   YAML::Node    output_yaml;
   output_yaml["camera_name"] = intrinsics.name();
   std::cout << colorful_char::info("Transformation from " + intrinsics.name() + " to body: ") << std::endl;
@@ -188,6 +188,7 @@ int main(int argc, char ** argv) {
   output_yaml["T_cam_body"] = T.inverse();
   fout << output_yaml;
   fout.close();
+  ROS_INFO("%s", colorful_char::info("Extrinsic results are saved in /data/camera_mocap_extrinsic_results.yaml").c_str());
 
   ros::shutdown();
   return 0;

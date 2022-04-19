@@ -141,3 +141,19 @@ kalibr_calibrate_imu_camera --bag [data.bag] --cam cam.yaml --imu imu.yaml --tar
 ### How to calibrate by yourself?
 
 Please refer to the [WIKI page on Kalibr toolbox](https://github.com/ethz-asl/kalibr/wiki/camera-imu-calibration) for more details.
+
+# Camera-MoCap Hand-eye Calibration
+
+### How to reproduce the result?
+
+- Download the Camera-MoCap extrinsic data bag and all related intrinsic results from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/), and place them into the `data` folder.
+
+- Check and modify the parameters in the `config/camera_mocap_calibration.yaml`, then launch the Camera-MoCap extrinsic calibration by:
+
+```
+roslaunch mpl_calibration_toolbox camera_mocap_calibration.launch
+```
+
+### How to calibrate by yourself?
+
+Please refer to the statement from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/). **Note:** Synchronization between the camera system and the MoCap system is rather crucial in order to achieve better accuracy.
