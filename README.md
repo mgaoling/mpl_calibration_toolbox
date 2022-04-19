@@ -4,7 +4,8 @@
 
 This toolbox is a ROS workspace integrating with a set of easy-to-use calibration functions, including:
 
-- [Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#intrinsic-calibration)
+- [Camera Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-intrinsic-calibration)
+- [IMU Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#intrinsic-calibration)
 - [Camera-IMU Extrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-imu-extrinsic-calibration)
 
 # Getting Started
@@ -27,18 +28,18 @@ catkin_make
 source ~/catkin_ws/devel/setup.bash
 ```
 
-# Intrinsic Calibration
+# Camera Intrinsic Calibration
 
 ### How to reproduce the result?
 
-- Download the intrinsic data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/#Intrinsics) and place it into the `data` folder. Here, we use the `right_event_camera_intrinsic_data.zip` file as an example. Decompress the file by:
+- Download the intrinsic data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/) and place it into the `data` folder. Here, we use the `right_event_camera_intrinsic_data.zip` file as an example. Decompress the file by:
 
 ```
 roscd mpl_calibration_toolbox/data
 unzip right_event_camera_intrinsic_data.zip
 ```
 
-- Check and modify the parameters in the `config/intrinsic_calibration.yaml`, then launch the intrinsic calibration by:
+- Check and modify the parameters in the `config/intrinsic_calibration.yaml`, then launch the camera intrinsic calibration by:
 
 ```
 roslaunch mpl_calibration_toolbox intrinsic_calibration.launch
@@ -68,11 +69,28 @@ rosrun camera_calibration cameracalibrator.py --size 9x6 --square [square_length
 
 **Note:** It is recommended to double-check the corner extraction among all recorded images. Delete the unwanted images if necessary, and then reproduce the results for better accuracy.
 
+# IMU Intrinsic Calibration
+
+### How to reproduce the result?
+
+- Download the config file and the data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/).
+
+- Install the [Allan Variance ROS toolbox](https://github.com/ori-drs/allan_variance_ros), then launch the IMU intrinsic calibration by:
+
+```
+rosrun allan_variance_ros allan_variance imu_intrinsic_data_5hrs_recordings.bag imu_intrinsic_config.yaml
+rosrun allan_variance_ros analysis.py --data allan_variance.csv
+```
+
+### How to calibrate by yourself?
+
+Please refer to the [Allan Variance ROS toolbox](https://github.com/ori-drs/allan_variance_ros) for more details.
+
 # Camera-IMU Extrinsic Calibration
 
 ### How to reproduce the result?
 
-- Download and decompress the config file and the data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/#Intrinsics).
+- Download and decompress the config file and the data bag from the [Calibration Page on VECtor Benchmark](https://star-datasets.github.io/vector/calibration/).
 
 - Install the [Kalibr toolbox](https://github.com/ethz-asl/kalibr), then launch the Camera-IMU extrinsic calibration by:
 
