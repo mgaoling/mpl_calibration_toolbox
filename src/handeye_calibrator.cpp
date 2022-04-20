@@ -47,6 +47,7 @@ int main(int argc, char ** argv) {
   rosbag::Bag bag;
   bag.open(bag_path, rosbag::bagmode::Read);
   rosbag::View view(bag);
+  ROS_INFO("%s", colorful_char::info("Start loading the rosbag ...").c_str());
 
   // Read images and mocap poses from rosbag.
   int         num_blurred_imgs = 0;
@@ -156,10 +157,11 @@ int main(int argc, char ** argv) {
     }
   }
   num_skipped_imgs = num_imgs - num_blurred_imgs - num_valid_imgs;
-  ROS_INFO("%s", colorful_char::info("Number of images:         " + std::to_string(num_imgs)).c_str());
-  ROS_INFO("%s", colorful_char::info("Number of skipped images: " + std::to_string(num_skipped_imgs)).c_str());
-  ROS_INFO("%s", colorful_char::info("Number of blurred images: " + std::to_string(num_blurred_imgs)).c_str());
-  ROS_INFO("%s", colorful_char::info("Number of valid images:   " + std::to_string(num_valid_imgs)).c_str());
+  ROS_INFO("%s", colorful_char::info("Successfully load the rosbag!").c_str());
+  std::cout << "Number of images:         " << num_imgs << std::endl;
+  std::cout << "Number of skipped images: " << num_skipped_imgs << std::endl;
+  std::cout << "Number of blurred images: " << num_blurred_imgs << std::endl;
+  std::cout << "Number of valid images:   " << num_valid_imgs << std::endl;
   if (num_valid_imgs == 0) {
     ROS_ERROR("%s", colorful_char::error("No valid image. Please reset the pnp_residual_thershold.").c_str());
     ros::shutdown();
@@ -188,8 +190,7 @@ int main(int argc, char ** argv) {
   output_yaml["T_cam_body"] = T.inverse();
   fout << output_yaml;
   fout.close();
-  ROS_INFO("%s", colorful_char::info("Extrinsic results are saved in /data/camera_mocap_extrinsic_results.yaml").c_str());
-
+  std::cout << colorful_char::info("Extrinsic results are saved in /data/camera_mocap_extrinsic_results.yaml") << std::endl;
   ros::shutdown();
   return 0;
 }

@@ -100,7 +100,8 @@ int main(int argc, char ** argv) {
       Eigen::Quaterniond q(eigen_r_mtx);
       cam_rotation_vec.emplace_back(q);
       cam_translation_vec.emplace_back(cam_t_vec);
-      cv::putText(img, intrinsics_vec[cam_idx].name() + " " + img_reader_vec[cam_idx].image_name(img_idx), cv::Point(cv::Size(20, 35)),
+      cv::putText(img, "Press any Key to Continue.", cv::Point(cv::Size(20, 35)), cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 255), 2);
+      cv::putText(img, intrinsics_vec[cam_idx].name() + " " + img_reader_vec[cam_idx].image_name(img_idx), cv::Point(cv::Size(20, 90)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
       if (vis_on) {
         cv::imshow("Checkerboard Pattern", img);
@@ -231,7 +232,7 @@ int main(int argc, char ** argv) {
         cv::circle(img_reader_vec[cam_idx].image(img_idx), proj_corner, 2, cv::Scalar(255, 0, 0), 3);
       }
       residual /= board_width * board_height;
-      cv::putText(img_reader_vec[cam_idx].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 70)),
+      cv::putText(img_reader_vec[cam_idx].image(img_idx), "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 125)),
                   cv::FONT_HERSHEY_DUPLEX, 1, cv::Scalar(0, 255, 0), 2);
       if (residual >= 2)
         ROS_WARN("%s", colorful_char::warning("The overall reprojection error is higher than 2pix on image: "

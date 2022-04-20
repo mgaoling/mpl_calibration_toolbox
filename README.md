@@ -8,6 +8,7 @@ This toolbox is a ROS workspace integrating with a set of easy-to-use calibratio
 - [IMU Intrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#imu-intrinsic-calibration)
 - [Joint Camera Extrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#joint-camera-extrinsic-calibration)
 - [Camera-IMU Extrinsic Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-imu-extrinsic-calibration)
+- [Camera-MoCap Hand-eye Calibration](https://github.com/mgaoling/mpl_calibration_toolbox#camera-mocap-hand-eye-calibration)
 
 # Getting Started
 
