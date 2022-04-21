@@ -12,15 +12,13 @@ This toolbox is a ROS workspace integrating with a set of easy-to-use calibratio
 
 # Getting Started
 
-### Requirement and Dependency
+The following instructions are tested on [Ubuntu 20.04](https://ubuntu.com/download/desktop) with [ROS Noetic](http://wiki.ros.org/ROS/Installation), a ROS **desktop-full installation** is therefore required. On top of that, the following libraries ([OpenCV 4.2](https://opencv.org/releases/), [Ceres Solver](http://ceres-solver.org/installation.html), [yaml-cpp](https://github.com/jbeder/yaml-cpp)) have to be installed:
 
-- [Ubuntu 20.04](https://ubuntu.com/download/desktop)
-- [ROS Noetic](http://wiki.ros.org/ROS/Installation) with **Desktop-Full Installation**
-- [OpenCV 4.2](https://opencv.org/releases/)
-- [Ceres Solver](http://ceres-solver.org/installation.html)
-- [yaml-cpp](https://github.com/jbeder/yaml-cpp)
+```
+sudo apt-get install libopencv-dev libceres-dev libyaml-cpp-dev
+```
 
-### Compile
+After that, enter your catkin workspace and the build can be triggered with the following command:
 
 ```
 cd ~/catkin_ws/src
