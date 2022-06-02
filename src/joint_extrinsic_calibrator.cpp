@@ -88,8 +88,7 @@ int main(int argc, char ** argv) {
         ROS_WARN("%s", colorful_char::warning("No pattern found in image: " + img_reader_vec[cam_idx].image_path(img_idx)).c_str());
       }
 
-      if (!cv::solvePnP(board.object_points(), corners, intrinsics_vec[cam_idx].camera_matrix(),
-                        intrinsics_vec[cam_idx].distortion_coefficients(), cam_r_vec, cam_t_vec)) {
+      if (!cv::solvePnP(board.object_points(), corners, intrinsics_vec[cam_idx].camera_matrix(), cv::noArray(), cam_r_vec, cam_t_vec)) {
         warning_detected = true;
         ROS_WARN("%s", colorful_char::warning("Could not solve the PnP problem.").c_str());
       }
