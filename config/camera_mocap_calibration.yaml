@@ -3,10 +3,10 @@ checkerboard_height: 6
 checkerboard_square_size: 0.120 # [m]
 camera_frequency: 30
 mocap_frequency: 120
-camera_topic: "/stereo/right/image_mono"
+camera_topic: "/camera/left/image_mono"
 mocap_topic: "/gt/pose"
-intrinsic_yaml_path: "/data/right_regular_camera_intrinsic_results.yaml"
-rosbag_path: "/data/camera_mocap_extrinsic_data1.bag"
+intrinsic_yaml_path: "/data/left_regular_camera_intrinsic_results.yaml"
+rosbag_path: "/data/camera_mocap_extrinsic_data1.synced.bag"
 skipped_interval: 5 # [Minimum = 1] use 1 and skip N-1 (1 in N)
 pnp_residual_thershold: 1.0
 show_visualization: true
