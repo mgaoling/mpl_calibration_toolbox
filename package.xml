@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package format="2">
   <name>mpl_calibration_toolbox</name>
-  <version>1.0.0</version>
+  <version>1.1.0</version>
   <description>The MPL Calibration Toolbox</description>
   <maintainer email="gaoling@shanghaitech.edu.cn">Ling Gao</maintainer>
   <license>BSD-3-Clause-Clear</license>
