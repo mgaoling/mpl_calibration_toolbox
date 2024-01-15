@@ -9,7 +9,20 @@
 #include <rosbag/view.h>
 #include <sensor_msgs/Image.h>
 
-int main(int argc, char ** argv) {
+void draw_axes(cv::Mat img, const cv::Mat corners, const cv::Mat imgpts)
+{
+  cv::Point corner(static_cast<int>(corners.at<cv::Point2f>(0, 0).x), static_cast<int>(corners.at<cv::Point2f>(0, 0).y));
+  cv::Point point1(static_cast<int>(imgpts.at<cv::Point2f>(0, 0).x), static_cast<int>(imgpts.at<cv::Point2f>(0, 0).y));
+  cv::Point point2(static_cast<int>(imgpts.at<cv::Point2f>(0, 1).x), static_cast<int>(imgpts.at<cv::Point2f>(0, 1).y));
+  cv::Point point3(static_cast<int>(imgpts.at<cv::Point2f>(0, 2).x), static_cast<int>(imgpts.at<cv::Point2f>(0, 2).y));
+
+  cv::line(img, corner, point1, cv::Scalar(255, 0, 0), 3);
+  cv::line(img, corner, point2, cv::Scalar(0, 255, 0), 3);
+  cv::line(img, corner, point3, cv::Scalar(0, 0, 255), 3);
+}
+
+int main(int argc, char **argv)
+{
   ros::init(argc, argv, "handeye_calibrator");
   ros::NodeHandle nh;
 
@@ -17,7 +30,7 @@ int main(int argc, char ** argv) {
   ros::param::get("show_visualization", vis_on);
 
   // Read checkerboard's basic info.
-  int    board_width, board_height;
+  int board_width, board_height;
   double board_square_size;
   ros::param::get("checkerboard_width", board_width);
   ros::param::get("checkerboard_height", board_height);
@@ -27,12 +40,15 @@ int main(int argc, char ** argv) {
   // Read camera's intrinsic result from the input path.
   std::string intrinsics_path;
   ros::param::get("/intrinsic_yaml_path", intrinsics_path);
-  if (!fs::exists(intrinsics_path)) {
-    if (intrinsics_path.front() != '/') intrinsics_path = '/' + intrinsics_path;
+  if (!fs::exists(intrinsics_path))
+  {
+    if (intrinsics_path.front() != '/')
+      intrinsics_path = '/' + intrinsics_path;
     intrinsics_path = ros::package::getPath("mpl_calibration_toolbox") + intrinsics_path;
   }
   CameraIntrinsics intrinsics = CameraIntrinsics(intrinsics_path);
-  if (!intrinsics.status()) {
+  if (!intrinsics.status())
+  {
     ros::shutdown();
     return -1;
   }
@@ -40,7 +56,8 @@ int main(int argc, char ** argv) {
   // Prepare rosbag for viewing.
   std::string bag_path;
   ros::param::get("/rosbag_path", bag_path);
-  if (!file_path_check(bag_path)) {
+  if (!file_path_check(bag_path))
+  {
     ros::shutdown();
     return -1;
   }
@@ -50,34 +67,43 @@ int main(int argc, char ** argv) {
   ROS_INFO("%s", colorful_char::info("Start loading the rosbag ...").c_str());
 
   // Read images and mocap poses from rosbag.
-  int         num_blurred_imgs = 0;
-  int         num_valid_imgs   = 0;
-  int         num_skipped_imgs = 0;
-  int         num_imgs         = 0;
-  int         num_curr_gt_msgs = 0;
-  int         img_freq, gt_freq, skipped_interval;
+  int num_blurred_imgs = 0;
+  int num_valid_imgs = 0;
+  int num_skipped_imgs = 0;
+  int num_imgs = 0;
+  int num_curr_gt_msgs = 0;
+  int img_freq, gt_freq, skipped_interval;
   std::string img_topic, gt_topic;
-  double      residual_thershold;
+  double residual_thershold;
   ros::param::get("/camera_frequency", img_freq);
   ros::param::get("/mocap_frequency", gt_freq);
   ros::param::get("/camera_topic", img_topic);
   ros::param::get("/mocap_topic", gt_topic);
   ros::param::get("/skipped_interval", skipped_interval);
   ros::param::get("/pnp_residual_thershold", residual_thershold);
-  std::queue<cv::Mat>                     img_queue;
+  std::queue<cv::Mat> img_queue;
   std::queue<std::pair<cv::Mat, cv::Mat>> gt_pose_queue;
-  std::vector<cv::Mat> cam_rotation_vec, cam_translation_vec, mocap_rotation_vec, mocap_translation_vec;  // absolute pose
-  for (const rosbag::MessageInstance & msg : view) {
-    if (msg.getTopic() == img_topic) {
+  std::vector<cv::Mat> cam_rotation_vec, cam_translation_vec, mocap_rotation_vec, mocap_translation_vec; // absolute pose
+  for (const rosbag::MessageInstance &msg : view)
+  {
+    if (!ros::ok())
+    {
+      break;
+    }
+    if (msg.getTopic() == img_topic)
+    {
       img_queue.emplace(cv_bridge::toCvCopy(msg.instantiate<sensor_msgs::Image>(), "bgr8")->image);
       ++num_imgs;
-    } else if (msg.getTopic() == gt_topic) {
+    }
+    else if (msg.getTopic() == gt_topic)
+    {
       // Skip the extra mocap poses with respect to image frequency.
-      if (num_curr_gt_msgs % (gt_freq / img_freq) == 0) {
-        geometry_msgs::PoseStamped::Ptr gt_msg    = msg.instantiate<geometry_msgs::PoseStamped>();
-        geometry_msgs::Quaternion       gt_orient = gt_msg->pose.orientation;
-        geometry_msgs::Point            gt_pos    = gt_msg->pose.position;
-        cv::Mat                         gt_r_mtx, gt_t_vec;
+      if (num_curr_gt_msgs % (gt_freq / img_freq) == 0)
+      {
+        geometry_msgs::PoseStamped::Ptr gt_msg = msg.instantiate<geometry_msgs::PoseStamped>();
+        geometry_msgs::Quaternion gt_orient = gt_msg->pose.orientation;
+        geometry_msgs::Point gt_pos = gt_msg->pose.position;
+        cv::Mat gt_r_mtx, gt_t_vec;
         cv::eigen2cv(Eigen::Quaterniond(gt_orient.w, gt_orient.x, gt_orient.y, gt_orient.z).toRotationMatrix(), gt_r_mtx);
         cv::eigen2cv(Eigen::Translation3d(gt_pos.x, gt_pos.y, gt_pos.z).vector(), gt_t_vec);
         gt_pose_queue.emplace(gt_r_mtx, gt_t_vec);
@@ -87,25 +113,30 @@ int main(int argc, char ** argv) {
     }
 
     // Skip the extra readings on both sensors.
-    if (img_queue.size() >= skipped_interval && gt_pose_queue.size() >= skipped_interval) {
-      cv::Mat img               = img_queue.front();
-      cv::Mat mocap_rotation    = gt_pose_queue.front().first;
+    if (img_queue.size() >= skipped_interval && gt_pose_queue.size() >= skipped_interval)
+    {
+      cv::Mat img = img_queue.front();
+      cv::Mat mocap_rotation = gt_pose_queue.front().first;
       cv::Mat mocap_translation = gt_pose_queue.front().second;
       cv::Mat cam_r_vec, cam_t_vec;
-      for (size_t idx = 0; idx < skipped_interval; ++idx) {
+      for (size_t idx = 0; idx < skipped_interval; ++idx)
+      {
         img_queue.pop();
         gt_pose_queue.pop();
       }
 
       // Detect checkerboard pattern on each image, solve the 2D-3D PnP problem.
       cv::Mat gray_img, corners, proj_pts;
-      if (img.channels() == 1) gray_img = img.clone();
+      if (img.channels() == 1)
+        gray_img = img.clone();
       else
         cv::cvtColor(img, gray_img, cv::COLOR_BGR2GRAY);
-      if (!cv::findChessboardCorners(gray_img, board.size(), corners)) {
+      if (!cv::findChessboardCorners(gray_img, board.size(), corners))
+      {
         ROS_WARN("%s", colorful_char::warning("No pattern found.").c_str());
         ++num_blurred_imgs;
-        if (vis_on) {
+        if (vis_on)
+        {
           cv::imshow("Checkerboard Pattern Visualization", img);
           cv::waitKey(0);
         }
@@ -115,10 +146,12 @@ int main(int argc, char ** argv) {
                        cv::TermCriteria(cv::TermCriteria::EPS + cv::TermCriteria::COUNT, 20, 0.01));
       cv::drawChessboardCorners(img, board.size(), corners, true);
       if (!cv::solvePnP(board.object_points(), corners, intrinsics.camera_matrix(), intrinsics.distortion_coefficients(), cam_r_vec,
-                        cam_t_vec)) {
+                        cam_t_vec, false))
+      {
         ROS_WARN("%s", colorful_char::warning("Could not solve the PnP problem.").c_str());
         ++num_blurred_imgs;
-        if (vis_on) {
+        if (vis_on)
+        {
           cv::imshow("Checkerboard Pattern Visualization", img);
           cv::waitKey(0);
         }
@@ -127,7 +160,8 @@ int main(int argc, char ** argv) {
       cv::projectPoints(board.object_points(), cam_r_vec, cam_t_vec, intrinsics.camera_matrix(), intrinsics.distortion_coefficients(),
                         proj_pts);
       double residual = 0;
-      for (size_t idx = 0; idx < board.object_points().size(); ++idx) {
+      for (size_t idx = 0; idx < board.object_points().size(); ++idx)
+      {
         double dx = corners.at<cv::Point2f>(idx, 0).x - proj_pts.at<cv::Point2d>(idx, 0).x;
         double dy = corners.at<cv::Point2f>(idx, 0).y - proj_pts.at<cv::Point2d>(idx, 0).y;
         residual += std::sqrt(dx * dx + dy * dy);
@@ -136,16 +170,32 @@ int main(int argc, char ** argv) {
       residual /= board.object_points().size();
       cv::putText(img, "Residuals = " + std::to_string(residual) + "pix", cv::Point(cv::Size(20, 35)), cv::FONT_HERSHEY_DUPLEX, 1,
                   cv::Scalar(0, 255, 0), 2);
-      if (residual >= residual_thershold) {
+      if (residual >= residual_thershold)
+      {
         ROS_WARN("%s", colorful_char::warning("The overall reprojection error is higher than threshold.").c_str());
         ++num_blurred_imgs;
-        if (vis_on) {
+        if (vis_on)
+        {
           cv::imshow("Checkerboard Pattern Visualization", img);
           cv::waitKey(0);
         }
         continue;
       }
       ++num_valid_imgs;
+
+      if (vis_on)
+      {
+        std::vector<cv::Point3f> axis;
+        cv::Mat img_axis;
+        axis.emplace_back(0.1, 0, 0);
+        axis.emplace_back(0, 0.1, 0);
+        axis.emplace_back(0, 0, -0.1);
+        cv::projectPoints(axis, cam_r_vec, cam_t_vec, intrinsics.camera_matrix(), intrinsics.distortion_coefficients(), img_axis);
+        draw_axes(img, corners, img_axis);
+
+        cv::imshow("Chessboard", img);
+        cv::waitKey(1);
+      }
 
       // Store rotation matrix and translation vector of the camera and mocap readings.
       cv::Mat cam_r_mtx;
@@ -162,14 +212,15 @@ int main(int argc, char ** argv) {
   std::cout << "Number of skipped images: " << num_skipped_imgs << std::endl;
   std::cout << "Number of blurred images: " << num_blurred_imgs << std::endl;
   std::cout << "Number of valid images:   " << num_valid_imgs << std::endl;
-  if (num_valid_imgs == 0) {
+  if (num_valid_imgs == 0)
+  {
     ROS_ERROR("%s", colorful_char::error("No valid image. Please reset the pnp_residual_thershold.").c_str());
     ros::shutdown();
     return -1;
   }
 
   // Handeye Calibration.
-  cv::Mat r_cam_body, t_cam_body;  // Transformation from the camera frame to the body frame (mocap frame)
+  cv::Mat r_cam_body, t_cam_body; // Transformation from the camera frame to the body frame (mocap frame)
   cv::calibrateHandEye(mocap_rotation_vec, mocap_translation_vec, cam_rotation_vec, cam_translation_vec, r_cam_body, t_cam_body,
                        cv::CALIB_HAND_EYE_DANIILIDIS);
   Eigen::Matrix3d r_mtx;
@@ -180,7 +231,7 @@ int main(int argc, char ** argv) {
 
   // Output extrinsic results both on terminal and in yaml file.
   std::ofstream fout(ros::package::getPath("mpl_calibration_toolbox") + "/data/camera_mocap_extrinsic_results.yaml");
-  YAML::Node    output_yaml;
+  YAML::Node output_yaml;
   output_yaml["camera_name"] = intrinsics.name();
   std::cout << colorful_char::info("Transformation from " + intrinsics.name() + " to body: ") << std::endl;
   std::cout << T.matrix() << std::endl;
