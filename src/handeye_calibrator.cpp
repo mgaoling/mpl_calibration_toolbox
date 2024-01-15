@@ -169,7 +169,7 @@ int main(int argc, char ** argv) {
         draw_axes(img, corners, img_axis);
 
         cv::imshow("Chessboard", img);
-        cv::waitKey(1);
+        cv::waitKey(0);
       }
 
       // Store rotation matrix and translation vector of the camera and mocap readings.
