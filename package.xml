@@ -8,11 +8,11 @@
   <url type="website">https://star-datasets.github.io/vector/calibration/</url>
 
   <buildtool_depend>catkin</buildtool_depend>
-  <depend>ceres</depend>
+  <depend>libceres-dev</depend>
   <depend>cv_bridge</depend>
   <depend>eigen</depend>
   <depend>geometry_msgs</depend>
-  <depend>opencv</depend>
+  <depend>libopencv-dev</depend>
   <depend>rosbag</depend>
   <depend>roscpp</depend>
   <depend>roslib</depend>
