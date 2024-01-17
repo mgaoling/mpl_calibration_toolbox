@@ -29,20 +29,13 @@ This toolbox, together with the [MPL Dataset Toolbox](https://github.com/mgaolin
 
 # Getting Started
 
-The following instructions are tested on [Ubuntu 20.04](https://ubuntu.com/download/desktop) with [ROS Noetic](http://wiki.ros.org/ROS/Installation), a ROS **desktop-full installation** is therefore required. On top of that, the following libraries ([Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page), [OpenCV 4.2](https://opencv.org/releases/), [Ceres Solver](http://ceres-solver.org/installation.html), [yaml-cpp](https://github.com/jbeder/yaml-cpp)) have to be installed:
-
-```
-sudo apt-get update
-sudo apt-get install libeigen3-dev libopencv-dev libceres-dev libyaml-cpp-dev
-ln -s /usr/include/eigen3/Eigen /usr/include/Eigen
-```
-
-After that, enter your catkin workspace and the build can be triggered with the following command:
+The following instructions are tested on [Ubuntu 20.04](https://ubuntu.com/download/desktop) with [ROS Noetic](http://wiki.ros.org/ROS/Installation), a ROS **desktop-full installation** is therefore required. On top of that, the following libraries ([Eigen 3](https://eigen.tuxfamily.org/index.php?title=Main_Page), [OpenCV 4.2](https://opencv.org/releases/), [Ceres Solver 1.14.0](http://ceres-solver.org/installation.html), [yaml-cpp](https://github.com/jbeder/yaml-cpp)) should be installed from `APT` or you can just use `rosdep` to manage package dependencies as below.
 
 ```
 cd ~/catkin_ws/src
 git clone https://github.com/mgaoling/mpl_calibration_toolbox.git
 cd ..
+rosdep install --from-paths src --ignore-src -y # install dependencies
 catkin_make
 source ~/catkin_ws/devel/setup.bash
 ```
